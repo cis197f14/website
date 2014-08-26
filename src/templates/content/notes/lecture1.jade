@@ -1,0 +1,90 @@
+:markdown
+
+  Lecture 1: Intro & JS Basics
+  ============================
+
+  CIS 197 (January 22, 2013)
+
+  ## Intro
+
+  As a browser scripting language, one of JavaScript's main uses is to implement
+  view logic -- how a user interface on the web is drawn, manipulated, and
+  interacted with. But as the language has matured, its scope has widened. Today,
+  you can do things like build a web server in JavaScript using Node.js or compile
+  video games from C++ to JS using Emscripten to play Quake III in a browser.
+
+  A few years ago, the traditional workflow of the front end developer was to get
+  some JS (probably jQuery) code working locally, FTP it over to a server, and
+  then handle the myriad cross-browser compatibility issues that ensued (\*cough\*
+  IE6 \*cough\*). The past few years have seen somewhat of a transformation of the
+  front end dev role, with a much greater emphasis on tools and practices. It's
+  a result of:
+
+  * people taking front end more seriously,
+  * browsers getting MUCH better,
+  * and more programmers with traditional programming experience entering the
+    ecosystem
+
+  One of my goals in this class is to introduce you to modern tools, practices,
+  and workflows in front end development. There's a sort of
+  [baseline](http://rmurphey.com/blog/2012/04/12/a-baseline-for-front-end-developers/)
+  of things that you're expected to be familiar with (Node, npm, homebrew, git,
+  tests, build systems, etc.) in order to be successful and not feel left behind.
+  I'll talk more about this at the end of today's lecture.
+
+  Today, I'm going to talk about language basics like syntax and variable scoping
+  and there won't be much mention of the web. As a programming language, JS is
+  an implementation of the ECMAScript standard, which makes no reference to web
+  technology. We're currently on v5 of ECMAScript, with v6 expected to be
+  a significant expansion to the language due in 2014.
+
+  ## Language Basics
+
+  See [JS basics module](#js-basics).
+
+  ## Exercises
+
+  Using these basics, can you write out a Fizzbuzz program?
+
+  Solution:
+
+      for (var i = 0; i < 15; i++) {
+        if (i % 3 === 0 && i % 5 === 0) {
+          console.log("fizzbuzz\n");
+        } else if (i % 3 === 0) {
+          console.log("fizz\n");
+        } else if (i % 5 === 0) {
+          console.log("buzz\n");
+        } else {
+          console.log(i + "\n");
+        }
+      }
+
+  ## Homework
+
+  Most of your homework will be to get up to speed with the tools you need for
+  front end development.
+
+  The first important thing you're expected to know is __git__ version control.
+  Using version control allows you to collaborate on software projects and
+  participate in the rich open-source community (JS is the most popular language
+  on Github!) To boost your git skills, use online resources like:
+
+  * [Github help](http://help.github.com/)
+  * [Try Git](http://try.github.io/)
+  * [Git Immersion](http://gitimmersion.com/)
+  * [A Visual Git Reference](http://marklodato.github.io/visual-git-guide/index-en.html)
+
+  For this class, I also expect a basic to moderate understanding of HTML/CSS. If
+  you are lacking in this area, please use online resources like
+  [Codecademy](http://codecademy.com) and
+  [Mozilla Developer Network](https://developer.mozilla.org/en-US/).
+
+  The rest of your homework is as follows:
+
+  * Read the _entire_ [syllabus](https://docs.google.com/document/d/1vd7qfE4TGTG_FW8LIACFIGMcBb1JQwQ0YofMwMyCyjc).
+  * Download Google Chrome (optionally, Chrome Canary).
+  * Install the latest version of node.js (on OS X, I recommend using Homebrew).
+  * Set up a Github account & fill out the
+    [intro survey](https://docs.google.com/forms/d/1ldp1D0eU4ZBYM_X12Qyloy_ZPJD9jWv6ClguegiJ5L4/viewform).
+  * Complete the [code submisison tutorial](#github).

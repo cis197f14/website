@@ -1,0 +1,107 @@
+:markdown
+
+  ## Code Style
+
+  Code style is extremely important when developing code that you hope to last
+  longer than its first writing. This is especially important with JavaScript
+  because the interpreter is very tolerant and will allow a great deal of
+  syntactic mistakes to pass undetected when code is executed. JS developers must
+  exhibit great discipline in writing idiomatic code that is easily readable to
+  all other developers.
+
+  Because of this, we're going to be adhering to a style guide for code written in
+  this class. If you ever go out and write JavaScript professionally, you would do
+  well to adhere to a structured style guide as well.
+
+  __Indentation__: use spaces, not tabs. 2 or 4 spaces.
+
+  __Line Length__: avoid lines longer than 80 characters.
+
+  __Comments__: be generous with comments, but try to describe more about _why_
+  a function exists and the assumptions it makes rather than _how_ it does things.
+  JavaScript is an expressive enough language (with first class functions, etc.)
+  that you can write very readable code that expresses intent properly.
+
+  __Whitespace__: most tokens should be separated by whitespace. Declare functions
+  like this:
+
+      var parseInt = function (string, radix) {
+        ...
+      };
+
+  `if / else` blocks and `for` / `while` loops should always be split into lines,
+  as per the K&R standard:
+
+      if (predicate) {
+        ...
+      } else {
+        ...
+      }
+
+
+      for (var i = 0; i < len; i++) {
+        ...
+      }
+
+
+      while (condition) {
+
+      }
+
+  __Functions__
+
+  If you use an identifier with a function expression, it provides the added
+  benefit of showing up with a proper identifier in stack traces.
+
+      var parseInt = function parseInt (string, radix) {
+        ...
+      };
+  
+  Alternatively, you can use a _function definition_ syntax like the following
+  example, but keep in mind that scoping works slightly differently – this
+  function becomes available at the top of its scope while the above _function
+  expression_ syntax means that a function is only available when its expression
+  is evaluated (and stored to that variable).
+
+      function parseInt (string, radix) {
+        ...
+      };
+
+  __Operators__
+
+  Avoid doing assignments in the conditional of `if` and `while` statements:
+
+      if (a = b) {
+
+  ...looks like a statement where intent can easily be misinterpreted as
+
+      if (a === b) {
+
+  `eval` is evil and misused. Don't use it in your programs. It has aliases, so
+  avoid those as well. Don't use the `Function` constructor or pass strings to
+  `setTimeout` / `setInterval`.
+
+  Similarly, `with` [should not be used](http://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/).
+
+  ------------------------------------------------------------------------------
+
+  Finally, you should be including an IIFE in all your JavaScript files (to
+  avoid polluting the global namespace), along with a `'use strict'` statement,
+  which invokes stricter interpretation of your JS source
+  ([here's a more detailed explanation](http://www.webdesignporto.com/why-use-strict-in-javascript-can-save-you-hours/)).
+
+      // file.js
+      (function () {
+        'use strict';
+  
+        // do stuff
+  
+  
+        module.exports = {
+          // export stuff
+        };
+      })();
+
+  ___For a very detailed style guide, refer to
+  [idiomatic.js](https://github.com/rwaldron/idiomatic.js/).___ (I generally
+  agree with most of the conventions used there).

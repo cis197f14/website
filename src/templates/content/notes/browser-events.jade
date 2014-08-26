@@ -1,0 +1,289 @@
+:markdown
+  Browser Events
+  ==============
+
+  [&larr; DOM Manipulation](#dom-manipulation)
+
+  To build any application or web page that allows user interaction, you'll need
+  to work with browser events.
+  
+  If you recall the [JS in browsers](#browsers) notes, we saw an event handler
+  being attached to a "click" event on a DOM node:
+  
+      <button class="submit" onclick="myApp.submitFormAsync();"> Submit </button>
+  
+  "onclick" handlers like this are not advised (you should generally keep JS code
+  only in JS files), so here's the API for it in plain JS:
+  
+      domNode.addEventListener( eventType, eventListener, useCapture );
+  
+  (the last argument indicates whether the event should bubble up in the DOM tree
+  as normal)
+  
+  ... so the above handler becomes:
+  
+      // assume myApp.submitFormAsync is a defined method
+  
+      var button = document.getElementsByTagName('button');
+  
+      button.addEventListener('click', function () {
+        myApp.submitFormAsync();
+      });
+  
+  ___Events types___
+  
+  Browsers can trigger many different events (see the full reference
+  [here](https://developer.mozilla.org/en-US/docs/Web/Reference/Events)). Here are
+  some important ones:
+  
+  * [Mouse](https://developer.mozilla.org/en/DOM/MouseEvent):
+    `mousedown`, `mouseup`, `click`, `dblclick`, `mousemove`, `mouseover`,
+    `mousewheel`, `mouseout`, `contextmenu`
+  * [Touch](https://developer.mozilla.org/en/DOM/TouchEvent):
+    `touchstart`, `touchmove`, `touchend`, `touchcancel`
+  * [Keyboard](https://developer.mozilla.org/en/DOM/KeyboardEvent):
+    `keydown`, `keypress`, `keyup`
+  * Forms & their elements: `focus`, `blur`, `change`, `submit`
+  * Window: `scroll`, `resize`, `hashchange`, `load`, `unload`
+  
+  ___Listeners___ are functions bound to events that get executed when a certain
+  event occurs (also known as event handlers). They are passed a properties object
+  relevant to and created by the event. For example, a `MouseEvent` reports mouse
+  coordinates:
+  
+      document.addEventListener('mousemove', function (e) {
+        console.log('Moused to (' + e.clientX + ', ' + e.clientY + ')');
+      });
+  
+  Event targets are also often available to handlers with `event.target`; for
+  example, it's often useful to know which element on a page was clicked.
+  
+  ___Note___: since browser JavaScript is single-threaded, no two event handlers
+  run at once. If an event occurs during the execution of a handler, it gets added
+  to an event queue to be handled after the main thread is freed up.
+  
+  --------------------
+  
+  ### Event propagation
+  
+  Events bubble up the DOM tree in a phenomenon known as __event propagation__.
+  Let's take the example of a block of text in a `<p>` tag with links in it:
+  
+      <body>
+        <h1>DOGECOIN</h1>
+        <p>
+          dogecoin is an open source peer-to-peer cryptocurrency, favored by Shiba
+          Inus worldwide.
+  
+          much newbie?
+          <a href="/get-started">read the getting started guide</a>, then
+          <a href="http://www.reddit.com/r/dogecoin" target="_blank">join the community at /r/dogecoin</a>
+        </p>
+      </body>
+  
+  When you click on one of these links, the browser follows this chain of events:
+  
+  * Check if there are event handlers attached to those `<a>` tags (could have
+    been attached to just the one clicked, the anchor links in the relevant
+    paragraph, or all anchor tags in the document)
+  * Check if there are event handlers attached to the `<p>` tag
+  * Bubble the event up to any `<body>` handlers
+  * Finally execute the default `<document>` handler, which follows a link to
+    another web resource
+  
+  If you want to prevent this kind of propagation up the document tree, you can
+  use `event.stopPropagation`. `event.preventDefault` also exists to let you
+  specify when the built-in browser functionality for an event should be ignored.
+
+  ### Cross-browser compatibility
+  
+  If you want your website to work across all browsers, there are a number of
+  inconsistencies you're going to have to handle in your code. For example, IE8
+  and below use this alternative method for attaching a click handler:
+  
+      domNode.attachEvent('onclick', function () {
+        // do stuff
+      });
+  
+  ... and it doesn't even support the third argument, `useCapture`.
+  
+  We might try and be clever by creating a wrapper `registerEventHandler` function
+  like so:
+  
+      function registerEventHandler (elem, event, handler) {
+        if (typeof elem.addEventListener === 'function') {
+  
+          // Regular browser
+          elem.addEventListener(event, handler);
+  
+        } else {
+  
+          // IE
+          elem.attachEvent('on + event, handler);
+  
+        }
+      }
+  
+  Similarly, to detach events, you'd need something like this:
+  
+      function unregisterEventHandler (elem, event, handler) {
+        if (typeof elem.removeEventListener === 'function') {
+  
+          // Regular browser
+          elem.removeEventListener(event, handler, false);
+  
+        } else {
+  
+          // IE
+          elem.detachEvent('on' + event, handler);
+  
+        }
+      }
+  
+  And while normally the `event` object passed to a handler contains event
+  properties, IE8 and below attach these properties to a __global event
+  variable__, so you might see code like this:
+  
+      function onKeypress (event, handler) {
+        event = event || window.event;
+  
+        // do stuff
+      }
+  
+      registerEventHandler(document, 'keypress', onKeypress);
+  
+  For a detailed run down of these kinds of cross-browser incompatibilities, see
+  [Chapter 13](http://eloquentjavascript.net/chapter13.html) of _Eloquent JS_.
+  
+  ### jQuery events to the rescue!
+  
+  Much in the same way that jQuery abstracts DOM manipulation for us, it can also
+  come to the rescue for dealing with events. Let's say we have a hover event
+  handler function like this:
+  
+      function onHover (e) {
+        $(this).attr('hovered', true);
+      }
+  
+  There are a few methods jQuery provides to bind handlers, including:
+  
+  * `bind`: the most straightforward, simply registers an event handler on each
+    selected element in the jQuery object. Has related convenience methods like
+    `click`, `hover`, etc.
+  
+  * `live`: same as `bind`, but attaches the handler to the document, which allows
+    it to capture events for dynamically added elements that match the selector
+    (deprecated as of jQuery 1.7)
+  
+  * `delegate`: a more nuanced version of `live` that lets you specify where to
+    attach the handler:
+  
+        $('#dropdown').delegate('option', 'hover', onHover);
+  
+  * `on` is versatile and it allows you to emulate the above 3 methods; this is
+    the most recommended:
+  
+        $('#dropdown option').on('hover', onHover);
+  
+        $(document).on('#dropdown option', 'hover', onHover);
+  
+        $('#dropdown').on('option', 'hover', onHover);
+  
+  [This article](http://www.elijahmanor.com/differences-between-jquery-bind-vs-live-vs-delegate-vs-on/),
+  although slightly outdated, does a great job of explaining the differences in
+  these approaches.
+  
+  
+  ### Document ready state
+  
+  After your browser successfully receives a web page response from an HTTP
+  request and parses its HTML, it has to do work to layout elements on
+  the page from the HTML markup. There's a delay (on the order of milliseconds)
+  between content appearing in your browser window and the DOM actually being
+  __ready__. (_Note_: keep in mind that script execution can occur either
+  before or after HTML layout, depending on where the `<script>` tag is in the
+  HTML markup).
+  
+  Once a document is "ready", you can reliably interact with it in a script.
+  `document.readyState` is set to `'complete'` when this event occurs. Most logic
+  in your JS applications should occur only after this event, so it's a common
+  pattern you'll encounter.
+  
+  Typically, you can listen for the `'DOMContentLoaded'` event on the `document` and
+  run all your important DOM-interacting code within an event handler like this:
+  
+      function onDOMReady () {
+        // do everything
+      }
+  
+      document.addEventListener('DOMContentLoaded', onDOMReady);
+  
+  Unfortunately, this event isn't fired in all versions of IE. The `'load'` event
+  on the `window` object is a pretty reliable callback:
+  
+      window.addEventListener('load', onDOMReady);
+  
+  But this doesn't capture all of the state of _document ready_. Using jQuery is
+  usually your best bet for a reliable document ready state across all browsers as
+  it handles most of the compatibility edge cases you might encounter. There is
+  a convenient event binding method called `ready` on a jQuery selection of the
+  `document`:
+  
+      $(document).ready(onDOMReady);
+  
+  A shorter syntax for this exists in modern jQuery. If you pass a function as the
+  first argument to the `$` function, that function gets executed on document
+  ready.
+  
+      $(onDOMReady);
+  
+  In practice, an anonymous function is typically used (this is currently the
+  preferred syntax):
+  
+      $(function () {
+        // do everything
+      });
+  
+  If possible, you should keep your DOM-ready code small and organized, such that
+  application logic that doesn't deal specifically with the DOM exists outside of
+  this function. A typical file structure might look like this (recall the advice
+  about separation of pure functions from impure ones, and think about how it
+  relates here):
+  
+      // myScript.js
+      (function () {
+        'use strict';
+  
+        /*
+         * File-scoped global variables & imports
+         */
+        // var foo = {}, bar = 'baz', ...;
+  
+  
+        // JS functions and classes that don't interact with the DOM
+  
+  
+        // Document ready
+        $(function () {
+  
+          // DOM interaction logic
+  
+        });
+  
+  
+        // Exports, if any
+        module.exports = {
+          // ...
+        };
+  
+      })();
+  
+  
+  --------------------
+  
+  __References__:
+  
+  * _Eloquent JS_
+  * [You Might Not Need jQuery](http://youmightnotneedjquery.com/)
+  
+

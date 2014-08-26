@@ -1,0 +1,263 @@
+:markdown
+
+  JavaScript Basics
+  =================
+
+  Reference: ___Eloquent JavaScript___ and ___JavaScript: The Good Parts___.
+
+  [&larr; Back to Lecture 1](#lecture1)
+
+  ### Introduction
+
+  > JavaScript is a programming language being used to do all sorts of clever and
+  > horrible things on the web.
+
+  -- Marijn Haverbeke, EloquentJS
+
+  It's the world's most widely available application runtime. It runs in all
+  modern web browsers and is one of the easiest languages to start using since you
+  don't have to download anything. Even if you don't do much web programming,
+  which this course focuses on, I hope I'll be able to expose you to some
+  interesting (or even mind-boggling) programs that influence how you write good
+  code in other languages and platforms. The good parts of JS (as Douglas
+  Crockford points out) really make it a great functional language -- deep down,
+  it actually shares more with Lisp and Scheme than C or Java (even though it
+  looks like C or Java on the surface).
+
+  You might have heard a great deal of criticism about JS coming into the course
+  (I'm sure I did when I first picked up JS). When you first start writing
+  programs, you'll notice that it's very liberal in what it allows. However, what
+  you type might end up being interpreted very differently from what you imagined.
+  Consider this seemingly basic arithmetic with various types:
+
+      1 + '2'        // --> '12'
+      [] + 4         // --> '4'
+      [] - 4         // --> -4
+      {} + 4         // --> '[object Object]4'
+
+  Sure, it might seem weird that we're adding together arrays, objects, and numbers
+  (where other languages would throw type errors), but you somewhat get the idea.
+
+  This kind of weak dynamic typing accounts for much of the language's
+  flexibility, but can also be troubling for beginners since the interpreter won't
+  help you identify all errors. On the flip side, it allows for many techniques
+  that are impossible in more strict languages. By learning the language properly
+  and working with it for a while, I've grown to really like JS -- you might too!
+
+  ### Getting Started
+
+  We're going to learn JavaScript by reading, writing, and running code. Like
+  I said, JavaScript usually runs in a browser, but it also runs on a platform
+  called `node.js`, which is built on Google Chrome's V8 JavaScript runtime. We'll
+  talk more about [Node](http://nodejs.org/) later in the course, but for now I'll
+  just use it as a JS interpreter and runtime to run code snippets.
+
+  You can fire up a REPL (interactive interpreter) simply with the `node` command.
+  If you don't have Node and want to follow along, you can use
+  [repl.it](http://repl.it/languages/JavaScript). (JS code can also be written to
+  a `.js` file and run with `node`). Alternatively, you can simply open up the
+  console in your web browser and type expressions:
+
+  ![browser-console](build/images/browser-console.png)
+
+  Ready? Let's start by looking at the different kinds of values in JS.
+
+  ### Values
+
+  __Number__: only one type, written literally.
+
+  * Internally, stored as a 64-bit double (like Java `double`)
+  * `NaN` represents not a number, where a value did not produce a result
+  * `Infinity` represents all numbers greater than (roughly) `1.8e308`
+
+          2 + (4 * -3)  // --> -10
+          1.25e4        // --> 12500
+
+  __String__: written with single quotes or double quotes. Use single quotes.
+
+  * Escape values with backslash `"\n \t \\"`
+  * Insert Unicode character codes with `\u`
+  * Can be compared with `<`, `>` (roughly alphabetical)
+  * Strings are immutable, but easy to concatenate with `+`
+
+          "abc" + "def"         // --> "abcdef"
+          4 + " is a number"    // --> "4 is a number"
+          "abacus" < "aardvark" // --> false
+
+  * No `char` type means you must use a single-char string
+  * Each character is 16 bits wide
+  * Access length with `.length` property (there are a few other String methods,
+    discussed later)
+
+  __Boolean__: `true`, `false`
+
+  * Standard operators: `&&`, `||`, `!`
+
+          true && !false  // --> true
+
+  _A note about *falsy* values_: The following values, when evaluated as Booleans,
+  are false:
+
+  * `false`
+  * `null`
+  * `undefined`
+  * The empty string `''`
+  * The number `0`
+  * The number `NaN`
+
+  All _other_ values, including `true`, the string `'false'`, and all objects, are
+  ___truthy___. Control flows like this are common:
+
+      var course = {
+        title: 'JavaScript',
+        dept: 'CIS',
+        code: 197
+      };
+
+      if (course.instructor) {
+        console.log(course.instructor.name);
+      } else {
+        console.error("No instructor found!");
+      }
+
+  __Object__: curly braces (really convenient literal notation!)
+
+  * Lightweight mutable key-value stores
+  * Like C structs, Python dicts, associative arrays, etc.
+  * Accessed with `.propertyName` or `['propertyName']` refinement syntax
+
+          var obj = {
+            number: 1,
+            string: "abcdef",
+            bool: true,
+            object: { a: 1, b: 2, c: 3 },
+            function: (function () { return 0; })
+          }
+
+          obj.string        // --> "abcdef"
+          obj['object'].a   // --> 1
+
+  * Under the hood, pretty much everything is represented as an object in JS
+    (more on this later)
+
+  __Array__: square brackets literal notation.
+
+  * Hash map performance
+  * Internally represented as objects with numerical property names: `arr[0]`
+  * Convenience methods like `.push`, `.pop`, `.join`
+
+          var a = [ 'this', 'is', 'a', 'list', 'of', 'tokens' ]
+
+          a[0]          // --> 'this'
+          a.join(' ')   // --> 'this is a list of tokens'
+
+  __Function__: `function` keyword + curly braces contain block of statements.
+
+  * First-class JS object (this allows JavaScript to be highly _functional_)
+  * "Piece of a program wrapped in a value"
+  * Returns a value provided with `return` keyword, otherwise `undefined`
+
+          var square = function (x) {
+            return x * x;
+          }
+
+          Math.square = square;
+
+          console.log("the square of 4 is " + Math.square(4));
+
+  __Undefined__: void, null, un-assigned-to variables.
+
+      var x;                    // --> undefined
+      var f = function () { };
+      f();                      // --> undefined
+
+
+  Values are garbage collected by the JS runtime (no `malloc`, etc. like in C).
+
+  Let's examine some more language grammar & terminology...
+
+  ### Expressions
+
+  __Expressions__ are anything that produces a value:
+
+  * Literally written values (string, number, built-in)
+  * Expression within parentheses
+  * Unary operator applied to one expression (`-`, `!`, `typeof`, ...)
+  * Binary operator applied (infix) to two expressions (`+`, `*`, `===`, `&&`, ...)
+  * Ternary operator applied to three expressions
+    (`predicate ? valueIfTrue : valueIfFalse`)
+  * Object refinement (using `['propertyName']` or `.propertyName`)
+  * Invocation
+
+  Expressions cannot have side effects, meaning they cannot affect state of the
+  program or the world. They _only_ produce a value.
+
+  ### Statements
+
+  JavaScript programs are built as a list of statements. Each is typically
+  terminated by a semicolon `;` (C-style syntax). You can also sequence
+  statements with `,` but let's not have any of that in this course.
+
+  Programs are executed sequentially statement-by-statement from top to bottom;
+  you can guarantee order of execution.
+
+  ### Programs
+
+  A JavaScript file contains a program. You can run multiple files at the same
+  time and they will share a common global environment. There is no built-in
+  module system in ECMAScript (coming soon in v6), but we will discuss later how
+  you can properly organize your code to achieve the kinds of module or package
+  systems you might be familiar with from other programming languages.
+
+  In a browser environment, each `<script>` tag loads a compilation unit and
+  executes the contained code immediately. Here we encounter one of the __bad
+  parts__ of JavaScript: reliance on global variables.
+
+  JavaScript lacks a linker (like `C`), so when it interprets a compilation unit,
+  it throws all variables together into a common global namespace & scope.
+
+  ### Variable Scoping
+
+  We've seen a few variables in the above examples; let's look at them more
+  closely. You declare variables simply with the `var` keyword (look ma, no
+  static types!).
+
+  Variables exist in an environment and can one of two scopes:
+
+  * Global
+  * Function
+
+  The rule for distinguishing the two is actually pretty simple: variables
+  declared outside of a function definition are __global__ while those inside are
+  __local__.
+
+  Local variables are created and destroyed every time a function is run (which
+  is often just once; we'll see how this is exploited).
+
+  _Variables are evaluated as if they were declared at the top of the scope they
+  exist in_. This is referred to as ___hoisting___. Take a look at this buggy
+  program:
+
+      var a = 100;
+      show();
+
+      function show () {
+        console.log(a);    // --> "undefined"
+
+        if (true) {
+          var a = 123;
+        }
+      }
+
+  Why does line 5 print "undefined"?
+
+  Before JavaScript executes a function, it looks for all variable declarations
+  within the current scope. It then declares all those variables _but doesn't
+  assign them_ (effectively executing the statement `var a;`). Only then does
+  the function block get executed. Assignment of a variable occurs when the
+  function execution reaches the line where you actually assign a variable.
+
+  In the example above, `a` is re-declared as a local variable at the top of the
+  `show` function. So when we try to print out its value with `console.log`, its
+  value is undefined.
+

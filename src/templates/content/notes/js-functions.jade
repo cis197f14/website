@@ -1,0 +1,189 @@
+:markdown
+
+  JavaScript Functions
+  ====================
+
+  Reference: ___Eloquent JavaScript___ and ___JavaScript: The Good Parts___.
+
+  --------------------
+
+  > Generally, the craft of programming is the factoring of a set of requirements
+  > into a set of functions and data structures.
+
+  -- Douglas Crockford (_JS: The Good Parts_)
+
+  I won't too talk about the data structures, but let's examine the basics of what
+  a _function_ does in a programming language. Functions embody the logic of your
+  application.
+
+  Pure functions have no side effects -- they don't affect the state of the world.
+  They are easy to use and reason about since they require no context, and they
+  are also more widely applicable to solving problems through code. However, they
+  do not solve all the possible problems you might come across when developing
+  software. I did say, of course, that JS is mainly used for view logic on the
+  web; if we can't manipulate the state of a web page, then what good is our
+  program?
+
+  This next bit of advice applies to nearly all programming languages: if
+  a function seems simple enough that it can be written _purely_, then do so. In
+  terms of programming language theory, JavaScript borrows a lot from functional
+  languages, so it would be wise (and more natural to the language) to remain
+  thinking functionally, trying to keep as much of the impure application logic
+  contained to a few modules.
+
+  One more thing: like I said earlier, nearly everything in JS is an object, and 
+  that includes functions as well. They have a few special things about them,
+  including invocation capabilities. We'll cover more of the nuances of the
+  function object later.
+
+  ### Invocation
+
+  In addition to its arguments (which are _immediately_ defined as variables),
+  a function receives two extra special variables in its context: `this` and
+  `arguments`.
+
+  `this` refers to the containing scope or context of a function invocation:
+
+  __Method Invocation__: when invoked as a property of an object, a function's
+  containing object is its context.
+
+      var myObject = {
+        value: 0,
+        increment: function (inc) {
+          inc = inc ? inc : 1;
+          this.value += inc;
+        }
+      }
+
+      myObject.increment();
+      myObject.increment(50);
+      console.log(myObject.value);  // --> 51
+
+  __Function Invocation__: functions not invoked as an object property are
+  attached to the global object; this is somewhat of a flaw in JavaScript's
+  design. This flaw is best demonstrated by example.
+
+  Let's say I wanted to augment `myObject` with a `double` method
+  which doubles the contained `value` property. And maybe I'd like to use a
+  helper function to encode this logic, like so:
+
+      myObject.double = function () {
+        var helper = function () {
+          this.value = this.value * 2;
+        };
+        
+        helper();
+      };
+      
+      myObject.double();
+      console.log(myObject.value);  // --> 51
+
+  But this doesn't work! `myObject.value` has not been doubled; _function
+  invocation_ is the reason why. Even though the `helper` function is being
+  defined within a method of `myObject`, it gets executed in the global context.
+  As a result, `this` within `helper` references the global context (where the 
+  `value` property is meaningless).
+
+  The solution ends up being a strange construction like the following.
+  Functions don't retain a reference to their parent `this`, so we must manually
+  keep a reference, usually called `that`:
+
+      myObject.double = function () {
+        var that = this;
+
+        var helper = function () {
+          that.value = that.value * 2;
+        };
+
+        helper();
+      };
+
+      myObject.double();
+      console.log(myObject.value);  // --> 102
+
+  __Constructor Invocation__: when a function invocation is proceeded by the `new`
+  keyword, a new object is created and the function's `this` scope is bound to
+  that new object. This is strongly tied to prototypical inheritance, which is
+  covered in the notes on __objects__.
+
+  __Apply Invocation__: because they're just objects, functions can have their own
+  methods as well (crazy, I know). One in particular that's useful is the `.apply`
+  method, which allows you to specify a `this` context and `arguments` list.
+
+      var anotherObject = {
+        value: -10
+      }
+
+      myObject.increment.apply(anotherObject, [5]);
+
+      console.log(anotherObject.value)  // --> -5
+
+  _Related_: __Call Invocation__: works almost the same as the `.apply` method, but
+  instead of using an array, you pass arguments directly:
+
+      myObject.increment.call(anotherObject, 5);
+
+
+  ### Closures
+
+  Because of the limited types of variable scoping available in JS, hiding private
+  variables might seem difficult at first. But as as is often the case in the
+  language, the incredible flexibility of functions comes to the rescue.
+
+  A __closure__ in JavaScript is a function that, when invoked, is able to use
+  variables not available in the current scope -- they were stored in the closure
+  by the function that generated it. Here's a simple example.
+
+      var genClosure = function () {
+        var privateUser = {
+          firstName: 'Adi'
+        , lastName: 'Dahiya'
+        };
+
+        var printName = function () {
+          console.log(privateUser.firstName + ' ' + privateUser.lastName);
+        };
+
+        return printName;
+      }
+
+      console.log(genClosure());    // --> 'Adi Dahiya'
+
+  Here, the global environment doesn't have access to the `privateUser` variable,
+  but the function returned from `genClosure` is still able to access it. You'll
+  see this immediately in any code intended for execution in Node: it will be
+  wrapped in an __Immediately-Invoked Function Expression__ (IIFE).
+
+  ### IIFE
+
+  We know by now that global variables in JavaScript are a _Bad Thing_. Luckily,
+  JS programmers have developed a pattern to mitigate this concern. An
+  immediately-invoked function expression is an anonymous function used at the top
+  level of a JS program to _provide a lexical scope for just that file / module_.
+  It looks like this:
+
+      (function () {
+
+        var Person = function () { ... };
+        Person.prototype.getDescription = function () { ... };
+        ...
+
+        module.exports = {
+          Person: Person,
+          ...
+        };
+
+      })();
+
+  What we've done here is define an anonymous function and immediately invoked it
+  so that the contained code is run immediately when the file is loaded. The use
+  of a function makes any an all `var` declarations scoped to the anonymous
+  function, _not the global context_.
+
+  Note the exports exposed by this module at the end of the IIFE. _This is an
+  instance of a closure!_. When another file (or the Node interpreter) imports
+  this module, it can use any properties or functions from the `exports` object,
+  but it can't access the rest of the variables in the IIFE scope. Specifically,
+  this example uses __AMD__ (asynchronous module definition) syntax, which is the
+  standard in Node.js.
+

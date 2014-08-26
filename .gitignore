@@ -1,0 +1,7 @@
+node_modules
+*.un~
+*.vim
+*.swp
+*.swo
+*.scssc
+.DS_Store

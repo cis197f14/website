@@ -1,0 +1,318 @@
+:markdown
+  Functional Programming in JavaScript
+  ====================================
+  
+  As engineers and problem solvers, we often try to reduce the complexity of our
+  problems and solutions. This is especially important in programming, where we
+  are presented with a dichotomy of two seemingly incongruous systems: a very
+  low-level computer and a high-level thinking human. Computer scientists use
+  __abstractions__ to keep the problem space at hand small.
+  
+  When presenting a solution to a problem (essentially what a piece of code
+  _does_), it is helpful to assume prior knowledge about all low-level details
+  around the problem. Similarly, when I tell you a food recipe, I hope I don't
+  have to explain to you how to boil water or dice onions -- rather, I'd like to
+  tell you __how abstract, agreed-upon elements fit and work together__ to
+  accomplish the task of preparing a certain meal.
+  
+  One approach to abstraction we've already looked at is object-oriented
+  programming. This lecture will instead focus on __functional programming__ (FP),
+  a method of abstraction through clever uses of functions & their composition. As
+  I've been hinting at, JavaScript is a prime candidate for functional programming
+  (mainly due to first-class function objects).
+  
+  The simplest motivating example that applies here is the all-too-tired `for`
+  loop. We've written this kind of code often:
+  
+      for (var i = 0, l = arr.length; i < l; i++) {
+        // do stuff to arr[i]
+      }
+  
+  You probably already have ideas for how `do stuff to arr[i]` here can be
+  abstracted. Functions, are, after all, quite useful for "doing stuff":
+  
+      function forEach (array, fn) {
+        for (var i = 0, l = array.length; i < l; i++) {
+          fn(arr[i], i);
+        }
+      }
+  
+  Here, we've abstracted the low-level details of a `for` loop into `forEach`,
+  which better expresses our _intent_ with the code. What if we wanted to take
+  this further to other functions that iterate over arrays?
+  
+      function parseIntArray (array) {
+        var newArr = [];
+  
+        forEach(array, function (el) {
+          newArr.push(parseInt(el, 10));
+        });
+  
+        return newArr;
+      }
+  
+      function getClasses (elements) {
+        var classes = [];
+  
+        forEach(elements, function (el) {
+          classes.concat(el.classList);
+        });
+  
+        return classes;
+      }
+  
+  You start to get the idea. We can create another useful abstraction here --
+  notice how the above functions both take an array of elements and return
+  a "transformed" array.
+  
+      var map = function (array, fn) {
+        var newArr;
+  
+        // Recall that we were nice enough to provide the index to this iterator
+        forEach(array, function (el, i) {
+          newArr.push(fn(el, i));
+        });
+  
+        return newArr;
+      }
+  
+      var parseIntBaseTen = function  (str) { return parseInt(str, 10) };
+  
+      var parseIntArray = function (array) {
+        map(array, parseIntBaseTen);
+      };
+  
+  `map` is the first important higher-order function in FP. But we may want to do
+  more things with arrays than just transform them into other arrays. Consider:
+  
+      var sum = function (array) {
+        var total = 0;
+  
+        forEach(array, function (el) {
+          total += el;
+        });
+  
+        return total;
+      };
+  
+      var find = function (elements, tag) {
+        var filtered = [];
+  
+        forEach(elements, function (el) {
+          if (el.name === tag) {
+            filtered.push(el);
+          }
+        });
+  
+        return filtered;
+      }
+  
+  `sum` and `find` might not seem immediately similar, but we can in fact abstract
+  such logic into a higher-order function called `fold` (or `reduce`), which
+  builds up a single value from an array of values:
+  
+      var foldl = function (arr, fn, base) {
+        forEach(arr, function (el, i) {
+          base = fn(base, el, i);
+        });
+  
+        return base;
+      };
+  
+      var sum = function (arr) {
+        function mkTotal (base, el) {
+          base += el;
+        }
+  
+        return foldl(arr, mkTotal, 0);
+      }
+  
+  `base` here is the initial value of the fold as well as the final built-up
+  value. Can you trace the execution of `sum` here as implemented with a fold?
+  
+  ___Prompt___: try implementing `filter` with a fold. It takes two arguments: an
+  `array` to filter and a `predicate` function that tests an array element for
+  inclusion in the output.
+  
+  ------------------------
+  
+  In creating `parseIntArray` above, we almost touched on a couple more important
+  bits of FP: composition and partial application. Function composition works as
+  you're familiar with it from mathematics.
+  
+      var addTen = function (i) { return i + 10; },
+          double = function (i) { return i * 2; };
+  
+      var comp = function (f, g) {
+        return (function (input) {
+          return f(g(input));
+        });
+      };
+  
+      // Note the order of operations.
+      var doubleThenAddTen = comp(addTen, double);
+  
+  We had to make a function to accomplish the composition. Other more functional
+  languages have convenient syntax for this (like `$` in Haskell), but we'll have
+  to make do with our functions in JavaScript.
+  
+  Let's go back to the `parseIntArray` example. You can also accomplish partial
+  application in a similar manner:
+  
+      // Syntactic sugar for the most common use of `parseInt`
+      var parseIntBaseTen = function (i) { parseInt(i, 10); };
+  
+      // Partially apply `map` by returning an anonymous function
+      var mapWithFunction = function (fn) {
+        return (function (arr) {
+          return map(arr, fn);
+        });
+      };
+  
+      var parseIntArray = mapWithFunction(parseIntBaseTen);
+  
+  These are some examples of the powerful nature of first-class function objects.
+  The variables defined in the above block are all functions -- hopefully this
+  helps you understand why some might prefer the `var fn = function ...` syntax to
+  some extent.
+  
+  ------------------------
+  
+  ## Underscore.js
+  
+  Working with functions and throwing them around in this way is fun, but soon
+  we'd end up implementing a lot of higher-order functions and wonder if only
+  there was someone out there who had the sense to build a library with all the
+  useful ones in it...
+  
+  Lucky you! Some crafty JS developers at
+  [DocumentCloud](http://www.documentcloud.org/)
+  (mainly, [Jeremy Ashkenas](https://github.com/jashkenas)) have built just that
+  library.
+  
+  [Underscore](http://underscorejs.org/) is broadly defined as
+  ___the JavaScript utility belt___.
+  Or, what should have been built into the standard library. On the library's home
+  page, they describe it as the answer to the question:
+  
+  > If I sit down in front of a blank HTML page, and want to start being
+  > productive immediately, what do I need?
+  
+  There are four essential parts to this library. I've listed some of the
+  important functions from each section:
+  
+  #### Collections
+  
+  _Note_: "Collections" functions work on __both__ Arrays and Objects.
+  
+  * `each`
+  * `map`
+  * `reduce`
+  * `find`
+  * `filter`
+  * `reject`
+  * `pluck`
+  * `sortBy`
+  
+  #### Arrays
+  
+  * `first`
+  * `last`
+  * `flatten`
+  * `union`
+  * `intersection`
+  * `difference`
+  * `uniq`
+  * `zip`
+  
+  #### Functions
+  
+  * `bind`
+  * `partial`
+  * `memoize`
+  * `debounce`
+  * `compose`
+  
+  #### Objects
+  
+  * `keys`
+  * `values`
+  * `pairs`
+  * `extend`
+  * `pick`
+  * `omit`
+  * `clone`
+  * `has`
+  
+  ------------------------
+  
+  ### Using Underscore
+  
+  If we're really trying to be functional, we'll compose most of our logic as a
+  series of operations done on a piece of data. Imperative programming broadly
+  does this through a sequence of statements, but we want to do it with functions
+  because hey, this is a lecture on functional programming! There are two ways to
+  do this sequential composition in Underscore.
+  
+  In a manner similar to jQuery object instances, Underscore provides
+  functionality for turning arrays and objects (generically, "collections") into
+  _wrapped_ objects. Here's the difference:
+  
+      function double (n) { return n * 2; }
+  
+      _.map([1, 2, 3], double);   // Array
+  
+      _([1, 2, 3]).map(double);   // wrapped collection
+  
+  Wrapped collections have the benefit that __you can chain methods on them__.
+  Notice the difference in the two styles of composition:
+  
+      var stooges = [
+        { name: 'curly',  age: 25 },
+        { name: 'moe',    age: 21 },
+        { name: 'larry',  age: 23 }
+      ];
+  
+      var getAge = function (stooge) { return stooge.age; };
+      var rejectShortNames = function (stooge) { return stooge.name.length > 3; };
+  
+      var youngest = _.first(_.sortBy(_.filter(stooges, rejectShortNames), getAge));
+  
+      youngest = _.chain(stooges)
+                  .filter(rejectShortNames)
+                  .sortBy(getAge)
+                  .first()
+                  .value();
+  
+  The first expression to generate `youngest` looks kind of ugly, while the second
+  uses the nicer-looking chaining syntax.
+  
+  Note that in the second case I had to explicitly call `chain` to turn `stooges`
+  into a wrapped object for chaining. This is required when some methods in your
+  function chain do not return wrapped objects, like `filter` and `sort`; `chain`
+  ensures that a wrapped object is returned on every call (it even delegates
+  built-in `Array.prototype` methods). To get back an `Array` or `Object` from
+  a wrapped collection, you must call `.value()` on it.
+  
+  ------------------------
+  
+  Many of these are abstractions over varying JavaScript implementations, in the
+  same way that jQuery abstracts over differing DOM API implementations. So, in
+  the spirit of abstraction, readability, and robustness, I generally recommend
+  it on all projects.
+  
+  (_Time permitting_) Let's explore
+  [the source](http://underscorejs.org/docs/underscore.html)!
+  
+  ### FP libraries
+  
+  While Underscore is quite a popular library, there are a few libraries that
+  facilitate functional programming JavaScript by providing features borrowed from
+  more pure functional languages.
+  
+  * [Lodash](http://lodash.com/), a drop-in replacement for Underscore
+  * [Functional](http://osteele.com/sources/javascript/functional/)
+  * [allong.es](https://github.com/raganwald/allong.es)
+  * [jQuery Combinators](https://github.com/raganwald/JQuery-Combinators)
+  * [bilby.js](https://github.com/puffnfresh/bilby.js)
+  

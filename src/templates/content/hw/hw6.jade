@@ -1,0 +1,118 @@
+:markdown
+  Homework 6: Full Stack JS Application
+  =====================================
+  
+  Due _Friday, April 11 at 9 AM_ (extended from Wednesday).
+  
+  Implementation stub available in the
+  [homework repository](https://github.com/cis197s14/hw/blob/master/hw6/).
+  
+  We're going to be finishing up our Pokémon application by integrating the
+  client-side Backbone app with an Express web API. You'll be doing some
+  refactoring and implementing map persistence through the local web server.
+  
+  The below gif shows what the final result will look like. Each map is being
+  automatically saved to the server whenever an edit is made.
+  
+  ![switching-maps](build/images/gifs/switching-maps.gif)
+  
+  Instead of persisting maps via `localStorage`, we're going to use our own API
+  and load the stored maps into a `Backbone.Collection` called `MapStorage`.
+  Typically with Backbone Collections, you will instantiate it and then call
+  `.fetch()`, which will send a GET request to the `url` specified for the
+  Collection. Depending on options you pass into `fetch`, this may trigger a
+  `reset` event. In the implementation stub provided to you, the application is
+  initialized once this event is fired (i.e., the data we need from the server is
+  ready to be used).
+  
+  ### Application Structure
+  
+  The Pokémon client-side application is now served (statically) through a node
+  server. It has also been reconfigured into AMD modules and the Backbone models
+  / views are in their corresponding folders.
+  
+  To run the application:
+  
+  * Install dependencies with `npm install` (dependencies are specified in
+    `package.json`)
+  * Run `node server.js` (if this crashes, you'll have to restart it...)
+  * Navigate to `http://localhost:3000/#build/default`
+  
+  #### What's provided in the implementation stub
+  
+  * A `map-storage` module on the server that implements the business logic of map
+    data persistence. Take a look at this file to see how `fs` (the built-in file
+    system library) and `RSVP` (a Promise library) are used. Maps are stored as
+    JSON files in the folder `hw6/maps/`.
+  
+  * Updated Backbone routes on the client that contain the name of the map
+    currently being used:
+  
+    * `build/:mapName`: initializes the builder view
+    * `play/:mapName/r:row/c:col`: initializes the player view
+    * `new/:mapName`: starts off a new blank map, redirects to `build/:mapName`
+  
+    Most of the initialization / routing logic is already implemented in
+    `public/app/pokemon.js`.
+  
+  * Model initialization & general bookkeeping in the `App` model
+    (`public/app/models/app.js`). This model also enables communication between
+    various other models.
+  
+  * A stub for `AppView` (`public/app/views/app.js`). This view should instantiate
+    a `MapView`, `PlayerView`, and `BuilderView` as well as provide functions to
+    switch between application states (playing / building). It should also have
+    standard rendering logic using the new underscore template in `#app-template`
+    (it will probably help to override `App.toJSON()` here).
+    Finally, it should invoke the 'newMap' route when a user hits 'Enter' on the
+    new map text field.
+  
+  * Complete `BuilderView`, `PaletteView`, and `PlayerView`.
+  
+  * A nearly complete `MapView` that only requires one additional rendering
+    method.
+  
+  * Underscore templates for all views in `index.html`. Note that there is no
+    HTML markup rendered on page load; rather everything will be rendered through
+    JS.
+  
+  * The `Player` model. Note that this model triggers a `'shiftMap'` event to
+    tell the application router to move the visible map area when the player
+    reaches an edge rather than calling the router directly. This is a more
+    convenient method of control now that we have modules and don't want all our
+    application models globally available in an object like `POKEMON`.
+  
+  ### Completing the assignment
+
+  1. Complete the `TODO` items in `server.js`. You can test the API routes by
+     navigating to them in your web browser (`localhost:3000/api/maps`).
+  2. Fill in the `MapStorage` stub to talk to the server. Once this module
+     fetches maps successfully from the server, it should trigger a `'reset'`
+     event, which in turn triggers a `'ready'` event on the `App` model. This
+     essentially initializes the rest of the application.
+  3. Study and understand the `App` and `Builder` models. Note that a reference
+     to the currently selected map model (from all the maps we have loaded in
+     `MapStorage`) is kept as an attribute called `'mapModel'` on the `App`
+      model.
+  4. Fill in the `AppView` stub. It needs to initialize its children views
+     (within `initialize`, naturally), implement a `render` function to display
+     the overall layout and application controls on the page, and implement
+     two methods to switch between 'playing' mode and 'building' mode by
+     manipulating its children views. Note that you must pass a special object
+     to `MapView`'s `render` method to let it show the visible map properly;
+     this is documented within `views/map.js` (_hint_: check out the routing
+     function for this situation in `pokemon.js`).
+  5. Finish the implementation of `MapView`.
+
+  There is additional instruction within the comment blocks in the code. Try
+  and make your application match the demonstration gif near the top of this page
+  (it illustrates most of the new functionality)!
+
+  ### Notes
+  
+  As a general rule, please remove "TODO" comment blocks after you implement that
+  portion of the assignment.
+  
+  ___Extra Credit___ (3pts): Implement "delete map" functionality that removes
+  a map from the data store.
+

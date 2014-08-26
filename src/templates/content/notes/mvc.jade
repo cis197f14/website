@@ -1,0 +1,331 @@
+:markdown
+  Model-View-Controller
+  =====================
+  
+  ### Definition
+  
+  MVC is an architectural design pattern in software that tries to organize
+  application logic by applying separation of concerns. As the name suggests,
+  there are three types of components:
+  
+  1. __Models__ contain business data & logic.
+  2. __Views__ contain interface logic & representation.
+  3. __Controllers__ capture input & interactions and coordinate between __Views__
+     & __Models__.
+  
+  Again, the key here is a __separation of concerns__. Models shouldn't have to
+  know anything about what Views do and vice versa.
+  
+  ## MVC in web servers
+  
+  When building a web server, your method of interaction with the user is through
+  HTTP requests. Requests are stateless, so there is a new context created between
+  the browser and server on every interaction. This is quite different from the
+  initial MVC frameworks developed for operating systems (where it was originally
+  defined by the [Gang of Four](http://en.wikipedia.org/wiki/Design_Patterns)), so
+  it's worthwhile to study how MVC is applied to web servers before proceeding.
+  
+  Ruby on Rails is an MVC framework for programming web servers.
+  
+  ![server mvc](http://addyosmani.github.io/backbone-fundamentals/img/webmvcflow_bacic.png)
+  
+  _Source_: Backbone Fundamentals
+  
+  * __Models__ represent the application's data as well as rules for transforming
+    & storing it. A model is responsible for talking to the application's
+    database; you will generally have one DB table for each model.
+  * __Views__ represent the interface to a web browser, often in the form of HTML
+    pages (but sometimes JSON, etc.). These are generally useless without
+    application data supplied by models.
+  * __Controllers__ glue together models and views by processing (routing) web
+    requests, asking models for data, and populating views to construct responses
+    for the web browser.
+  
+  There is usually an additional component, a __router__, which analyzes a web
+  request and determines which __controller__ to employ and which __action__ to
+  invoke on it (hence, `ActionController` in Rails). For example consider these
+  web application URLs:
+  
+  * `/users/afl23jniovxc34/edit`: users controller grabs user, invokes edit action
+  * `/users/new`: users controller invokes new action
+  * `/pages/542`: pages controller grabs page, invokes show action
+  
+  This turns out to be pretty good system to deliver web applications in
+  a maintainable way. Servers are fast, interpreted languages are friendly, and
+  MVC encourages separation of concerns. Great.
+  
+  No system is perfect, though. The weak part at this point becomes the HTTP
+  requests that allow browsers and servers to interact. Even with heavy caching,
+  page reloads are relatively slow. So what can we do?
+  
+  ## Motivation: MVC on the client
+  
+  Up to this point, we've used JavaScript to add some interspersed interactivity
+  to our web page. An element click here, a mouse hover there, etc. There is a new
+  paradigm of delivering web applications that has become popular in the last few
+  years, one that places a lot more _responsibility_ on client-side JS rather
+  than on the server.
+  
+  __Single Page Applications__ (SPAs) work by loading data into the browser once
+  from a server request and then reacting to data changes (& user interaction) on
+  the client side without complete page refreshes (new full request cycles) to the
+  server. When more data is needed from the server, an AJAX request is initiated
+  with a server API endpoint. On reponse, the client-side application reacts
+  accordingly.
+  
+  With all this new logic happening on the client, your JavaScript applications
+  quickly start to get quite complicated. Rather than just displaying information
+  in the form of HTML/CSS and responding to some browser events, your app now has
+  to maintain state of _models_ and initiate web requests of its own.
+  
+  You might be tempted to accomplish this all with something like jQuery, but this
+  approach often leads to lots of unorganized spaghetti code. It's all too easy to
+  end up frantically trying to keep data in sync between the HTML UI, your
+  JavaScript logic, and the database on the server. Eventually, you'll be
+  reimplementing a lot of the things that existing client-side frameworks or
+  libraries already include. Here's where client-side MVC comes in.
+  
+  ## Manifestation: Backbone.js
+  
+  Backbone.js is an MV\* "framework" for client-side programming. It isn't quite
+  MVC, but it's a good start.
+  
+  > Backbone.js is a lightweight JavaScript library that adds structure to
+  > your client-side code. It makes it easy to manage and decouple concerns in
+  > your application, leaving you with code that is more maintainable in the long
+  > term.
+  
+  > Backbone focuses on giving you helpful methods for querying and manipulating
+  > your data rather than re-inventing the JavaScript object model. It's
+  > a library, rather than a framework, that plays well with others and scales
+  > well, from embedded widgets to large-scale applications.
+  
+  > Backbone provides a minimal set of data-structuring (Models, Collections) and
+  > user interface (Views, URLs) primitives that are helpful when building dynamic
+  > applications using JavaScript. It’s not opinionated, meaning you have the
+  > freedom and flexibility to build the best experience for your web application
+  > how you see fit. You can either use the prescribed architecture it offers out
+  > of the box or extend it to meet your requirements.
+  
+  _Source_: Backbone Fundamentals
+  
+  Some encouraging thoughts from Addy Osmani! Hopefully this has piqued your
+  interest in using a library like Backbone.
+  
+  Now, of course, Backbone isn't the only client-side framework or library out
+  there. There are many others and they suit various needs. We're going to start
+  with Backbone, however, because it's mature, popular, and has a vibrant
+  developer community. It's also relatively simple; you'll spend less time
+  wondering about "magic" occurring under the hood in your application.
+  
+  You can read more about Backbone on its [website](http://backbonejs.org/).
+  
+  ### Diving into Backbone
+  
+  The one hard dependency that Backbone requires is Underscore.js. In addition,
+  developers usually include jQuery (the functionality doesn't overlap) or some
+  other DOM manipulation library.
+  
+  Here's a high-level overview of Backbone's features. The following are all JS
+  "classes" that can be extended and constructed:
+  
+  * __Models__ are used to represent your data and can be _created_, _validated_,
+    _destroyed_, and _saved to data storage_.
+  * __Views__ organize your interface into logical views backed by models. They
+    also serve as the traditional "controller" in MVC -- but rather than
+    responding to server requests, they respond to browser events.
+  * __Collections__ are ordered sets of Models. They have a few convenience
+    methods you might expect from lists of models, and they also delegate events
+    from their elements to the whole collection.
+  * __History__ provides an API for navigation in the SPA. It allows you to listen
+    for `hashchange` or `pushState` events.
+  * __Router__ works in conjunction with History to allow you to decide which
+    application logic should run (views generated, etc.) on certain URL locations
+    in the app.
+  
+  In addition, there's a handy mixin utility class:
+  
+  * __Backbone.Events__ is a module that is mixed into Models. It provides
+    a convenient syntax for event dispatching. You can listen for "change" events
+    on Models with fine detail and update your Views accordingly.
+  
+  Let's start by looking at the tried-and-true to do list example. Markup in
+  `index.html` might look like:
+  
+      <!doctype html>
+      <html>
+      <head>
+        <title>To Do List</title>
+      </head>
+      <body>
+        <div id="todo-list">
+        </div>
+  
+        <script type="text/template" id="item-template">
+          <input id="todo-complete" type="checkbox" <%= completed ? 'checked="checked"' : '' %> />
+          <%= title %>
+          <span class="owner"><%= owner %>
+        </script>
+  
+        <!-- load scripts in order -->
+        <script src="lib/jquery.js"></script>
+        <script src="lib/underscore.js"></script>
+        <script src="lib/backbone.js"></script>
+        <script src="todo.js"></script>
+      </body>
+      </html>
+  
+  `todo.js` includes the following code (within its IIFE):
+  
+      var Todo = Backbone.Model.extend({
+  
+        defaults: {
+          title: '',
+          completed: false
+        }
+  
+      });
+  
+  Immediately you might notice that we are defining attributes to extend from the
+  globally-available `Backbone.Model`. This is similar to class inheritance --
+  a `Todo` is a special kind of `Backbone.Model`. (It's not quite prototypical
+  inheritance since `extend` only clones an object and adds additional
+  properties).
+  
+  The `Todo` model holds the data for each todo item. Later, we will group models
+  together into `Collection`s. We'll also explore a way of persisting models to
+  some data store (API, database, etc.).
+  
+  Now here's the todo View:
+  
+      // Renders a todo item and manages its UI interactions
+      var TodoView = Backbone.View.extend({
+  
+        // Directive to Backbone telling it wrap this view in an 'li'
+        tagName: 'li',
+  
+        // Returns a function that generates an HTML string
+        tmpl: (function () {
+          var $tmpl = $('#item-template');
+          return _.template($tmpl.html());
+        })(),
+  
+        // Maps events on elements within this view to view methods
+        events: {
+          'dblclick label': 'edit',
+          'keypress .edit': 'updateOnEnter',
+          'blur .edit':     'close'
+        },
+  
+        // Executed when a Todo is created
+        initialize: function () {
+          this.$el = $('#todo-list');
+        },
+  
+        // Writes this view's HTML representation to the DOM
+        render: function () {
+          var renderedTmpl = this.tmpl(this.model.toJSON());
+          this.$el.html(renderedTmpl);
+          this.input = this.$('.edit');
+          return this;
+        },
+  
+        // Executed when todo item is double-clicked
+        edit: function () {
+  
+        },
+  
+        // Executed when todo item loses focus
+        close: function () {
+  
+        },
+  
+        // Executed on each keypress when editing a todo item
+        updateOnEnter: function (e) {
+  
+        }
+  
+      });
+  
+  There are a lot of things happening here, and it's not entirely obvious which
+  functions get called first. When a `Backbone.View` is created, its `initialize`
+  method is called and its `events` object is parsed to register event handlers.
+  
+  Later, when this view is rendered with the `render` function, it looks up its
+  template and generates an HTML string from a JSON representation of its model.
+  Only then can you query for elements available in the view's template (they
+  become available in the `document`).
+  
+  ___A note on client-side templating___: It is possible to generate HTML as
+  strings or through jQuery methods and add classes, attributes, etc. to them. But
+  this quickly becomes tedious in any moderately-sized application. A better
+  solution is to use a _templating framework_, which allows you to define
+  common __templates__ interface elements as HTML skeletons with interpolated
+  values built-in. These values are later filled in by a JSON object representing
+  some application data. For example, we have defined the following Underscore
+  template in our HTML page, which uses `<%= %>` as interpolation delimiters:
+  
+      <script type="text/template" id="item-template">
+        <input id="todo-complete" type="checkbox" <%= completed ? 'checked="checked"' : '' %> />
+        <%= title %>
+        <span class="owner"><%= owner %>
+      </script>
+    
+  The method `_.template` will accept a template string and parse it into a
+  function.
+
+      // Returns a string-generating function
+      var tmpl = _.template($('#item-template').html())
+        , data = {
+            title: 'Complete homework 3 by Saturday',
+            owner: 'Joe Student'
+          };
+
+      var renderedHTML = tmpl(data);
+  
+  ----------------------
+  
+  Back to `TodoView`.
+  
+  Backbone doesn't quite separate the 'V' and 'C' in MVC. You can see that
+  Controller responsibilities are fulfilled in the `Backbone.View` defined here.
+  Its configuration for DOM interactions is managed by the `events` object, which
+  delegates browser events to methods defined in the View.
+  
+  With the model and view in place, we can invoke their constructors:
+  
+      var todo = new Todo({
+            title: 'Lorem ipsum dolor sit amet',
+            owner: 'Adi'
+          })
+        , todoView = new TodoView({
+            model: myTodo;
+          });
+  
+      todoView.render();
+  
+  Notice that a View is directly tied to a Model (it can also be tied to
+  a collection).
+  
+  This is the picture of MVC we have now in Backbone.
+  
+  ![backbone-mvc](http://addyosmani.github.io/backbone-fundamentals/img/backbone_mvc.png)
+  
+  _Source_: Backbone Fundamentals
+  
+  Fairly similar to the server MVC picture, but the View has swallowed the
+  Controller and interaction (requests / responses for data) happens through the
+  web page DOM.
+  
+  _See the course lecture repository for a simple working Backbone app_.
+  
+  (Time permitting) Let's explore
+  [the source](http://documentcloud.github.io/backbone/docs/backbone.html)!
+  
+  ----------------------
+  
+  __References__
+  
+  * [Backbone
+    Fundamentals](http://addyosmani.github.io/backbone-fundamentals/#mvc)
+  

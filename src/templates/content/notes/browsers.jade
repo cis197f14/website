@@ -1,0 +1,248 @@
+:markdown
+
+  JavaScript in the browser
+  ========
+
+  Reference: ___Eloquent JavaScript___ & ___Mozilla Developer Network___.
+
+  -------------------------------------------------------------------------------
+
+  > The browser is a really hostile programming environment.
+
+  -- Douglas Crockford, _The JavaScript Programming Language_ (video lecture)
+
+
+  The web browser is actually a great place that's experienced a huge deal of
+  development in the past few years (again, this is correlated with an influx of
+  front end dev tooling). But this quote does have a nugget of truth to it, as
+  you'll experience yourself in writing JS for the browser.
+
+  The reason that web APIs and browsers have been able to advance quickly is that
+  their development has been relatively decentralized. There is a standardizing
+  body, but there is no central authority developing browsers and implementing
+  language features. Various browser vendors (Google, Mozilla, Microsoft, etc.)
+  have implemented features at different rates and this has made cross-browser
+  support somewhat haphazard.
+
+
+
+
+  ## What is a browser?
+
+  A web browser has two main components that allow you to view and interact with
+  web pages:
+
+  * __JavaScript engine__: loads & interprets JavaScript source code in
+    a sandboxed runtime. Can also implement extensions to the language.
+  * __Rendering engine__ (or layout engine, or simply browser engine): formats
+    information on the page after parsing HTML & CSS.
+
+  Here are the major [JS engines](http://en.wikipedia.org/wiki/JavaScript_engine)
+  and [rendering engines](http://en.wikipedia.org/wiki/Comparison_of_web_browser_engines), 
+  respectively:
+
+  * __v8__ + __Blink__ (Google Chrome)
+  * __SpiderMonkey / Rhino__  + __Gecko__ (Mozilla Firefox)
+  * __Nitro__ + __WebKit__ (Apple Safari)
+  * __Chakra__ + __Trident__ (Internet Explorer)
+
+  There are even sometimes differences in the core JavaScript runtime across
+  browsers. For example, IE's runtime is known to have a memory leak when
+  a circular reference is retained between a user-created object and a built-in
+  object (such as a DOM reference).
+
+  Most of the development in these engines has been concerning performance.
+  Mozilla, generally the leader in cutting-edge JS research, has released JS
+  engines fast enough to run
+  [3D games like Quake at 60fps in the browser](https://blog.mozilla.org/blog/2013/03/27/mozilla-is-unlocking-the-power-of-the-web-as-a-platform-for-gaming/).
+
+  ### A bit of syntax
+
+  Before going further, let's recall what a basic HTML document looks like:
+
+      <!doctype html>
+      <html>
+        <head>
+          <title>CIS 197 JavaScript</title>
+        </head>
+        <body>
+          <h1>Welcome to CIS 197</h1>
+          <p>
+            This is a course about ...
+          </p>
+        </body>
+      </html>
+
+  In my examples, I'll usually eschew the `<doctype>`, `<html>`, `<body>`, etc.
+  tags and write a simplified version of the page.
+
+
+
+
+
+
+  ## Loading JavaScript in the browser
+
+  Well, we're not quite at the level of developing browser games right now. Let's
+  first understand how JS is loaded in the browser environment.
+
+  Web browser programs differ fundamentally from most other programs you are used
+  to writing in some key ways that have nothing to do with the JavaScript
+  language. First off, think about what you're actually doing when you download
+  JavaScript from the Internet to your web browser and executing it -- you're
+  trusting source code from a huge number of websites of varying degrees of
+  well-meaning to run on your computer. Sounds dangerous, doesn't it?
+
+  But we all get off just fine on the web, don't we? This is largely due to a neat
+  little concept called ___sandboxing___. Browsers severely limit the scope of
+  capabilities that a JavaScript program can act on. It can't look at the files on
+  your computer, modify things outside of the web page it's embedded in, or
+  contact servers other than the one which served its web page.
+
+  -------------------------------------------------------------------------------
+
+  Just like in a Node.js runtime, JS is executed in a global context, except this
+  time it's called `window`. It represents the current session in your browser
+  tab, which is cleared with every page refresh. That means your browser requests
+  new JS files and starts up a new global context when you switch or reload pages.
+
+  There are a few ways to invoke JS in an HTML page:
+
+  * Inline `<script>` tag
+
+        <head>
+          <title>...</title>
+          <script>
+            alert("foo");
+          </script>
+        </head>
+
+  * Linked `<script>` tag
+
+        <head>
+          <title>...</title>
+          <script type="text/javascript" src="scripts/foo.js"></script>
+        </head>
+
+  * Attached as an event handler to a DOM element
+
+        <button class="submit" onclick="myApp.submitFormAsync();">
+          Submit
+        </button>
+
+  The first two methods result in the JS code being parsed & run immediately as
+  the browser engine encounters it (while parsing the HTML document), while the
+  last (as indicated) runs some bit of JS code as an event callback.
+
+  _Note_: It's good practice to load your `<script>` tags as late as possible in
+  the HTML. This way, your browser displays a (possibly functioning)
+  correctly-rendered HTML document with CSS before using precious CPU cycles on
+  parsing and interpreting JavaScript code. Also, avoid inline script tags in
+  favor of linked `.js` files. These files should be loaded at the end of
+  `<body>`:
+
+      <!doctype html>
+      <html>
+        <head ... </head>
+        <body>
+          <h1>Welcome to CIS 197</h1>
+          ...
+
+          <script type="text/javascript" src="scripts/foo.js"></script>
+          <script type="text/javascript" src="scripts/bar.js"></script>
+        </body>
+      </html>
+
+  There's no convenient way to load multiple scripts at once like this; you'll
+  simply have to link all of them. But as we'll see later, various tools allow you
+  to package your application into a single script, which is usually also good
+  practice.
+
+
+
+
+
+
+  ## Document Object Model
+
+  Web pages structure is modeled using the Document Object Model, or DOM for
+  short. We know that HTML is a heirarchical markup language, so it makes sense
+  for our DOM to be a tree data structure.
+
+  ![DOM tree](http://eloquentjavascript.net/img/html.png)
+
+  _Source_: Eloquent JavaScript
+
+  In the above diagram we can see the two main kinds of DOM nodes:
+  _regular nodes_ and _text nodes_. Regular nodes are those with angle brackets in
+  HTML markup `< >` and text nodes are simply inline strings (for example, the
+  content of a `<p>` tag.
+
+  The root of an HTML document is available as a global variable in the browser JS
+  runtime called `document` -- this is the starting point for locating any other
+  node in the tree. There are a number of properties available on nodes; explore
+  them in a browser console and/or the
+  [MDN DOM Reference](https://developer.mozilla.org/en-US/docs/DOM/DOM_Reference).
+
+      document.body;
+
+      var firstNode = document.body.firstChild;
+
+      if (firstNode.nodeType === 3) {
+        // Text node
+        console.log("First node contains text: " + firstNode.nodeValue);
+      } else {
+        // Regular node
+        var n = firstNode.childNodes.length;
+        console.log("First node has the tag <" + firstNode.nodeName + "> and
+        " + n + " child nodes");
+      }
+
+  So far what we've observed is an _application programming interface_ for an HTML
+  document. Our web browser did the work to parse the DOM and model it for us. Can
+  we write a function that does the opposite (given a DOM node, print out its
+  HTML and the HTML of its children)?
+
+      var isTextNode = function (node) {
+            return node.nodeType === 3;
+          }
+        , withBrackets = function (str, isClosing) {
+            if (isClosing) {
+              return "<" + str.toLowerCase() + "/>";
+            } else {
+              return "<" + str.toLowerCase() + ">";
+            }
+          };
+
+      var toHTML = function (node) {
+        if (isTextNode(node)) {
+
+          return node.nodeValue;        // TODO: escape HTML
+
+        } else {
+
+          var buffer = withBrackets(node.nodeName)
+            , len = node.childNodes.length;
+
+          if (len) {
+            for (var i = 0; i < len; i++) {
+              buffer += toHTML(node.childNodes[i]);
+            }
+
+            buffer += withBrackets(node.nodeName, true);
+          }
+
+          return buffer;
+        }
+      };
+
+      console.log(toHTML(document.body));
+
+  This is a neat little implementation, but it turns out there's a built-in
+  function with pretty similar (and more robust) functionality. The `outerHtml` 
+  property on DOM nodes returns a string of the HTML representation of a node
+  (itself included). `innerHtml` is the same, but it only looks at children of
+  the node.
+
+      document.body.outerHtml;    // --> "<body><h1>...</h1>...</body>"
+

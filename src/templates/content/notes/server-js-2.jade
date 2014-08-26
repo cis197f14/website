@@ -1,0 +1,411 @@
+:markdown
+  More Server-Side JavaScript
+  ===========================
+  
+  [Last lecture](#server-js), we talked about the building blocks of a web server
+  in JavaScript. This time, we'll look into request routing, the Express
+  framework for Node, and stringing the JavaScript web application stack together.
+  
+  ## Routing requests
+  
+  Recall the server-side MVC diagram.
+  
+  ![server mvc](http://addyosmani.github.io/backbone-fundamentals/img/webmvcflow_bacic.png)
+  
+  Some kind of URL parsing is certainly necessary to route web requests to various
+  controller actions / handlers. You might use functions like the following to
+  inspect parts of the URL and query string (using only core modules):
+  
+  
+      |                                   url.parse(string).query
+      |                                           |
+      |           url.parse(string).pathname      |
+      |                       |                   |
+      |                       |                   |
+      |                     ------ -------------------
+      http://localhost:8888/start?foo=bar&hello=world
+      |                               ---       -----
+      |                                |          |
+      |                                |          |
+      |             querystring(string)["foo"]    |
+      |                                           |
+      |                       querystring(string)["hello"]
+  
+  _Source: Node Beginner Book_
+  
+  You can imagine how we might program our server to send requests for certain
+  pathnames to different handlers and pass along relevant data (for example, from
+  the query string).
+  
+  Now consider a RESTful route like this example we saw a few weeks ago:
+  
+      /:year/:month/:day/:section/:subsection/:story.html
+  
+  _Prompt_: how would you parse out the relevant bits of data here? Imagine you got
+  a URL looking like
+  
+      http://www.nytimes.com/2014/03/05/movies/awardsseason/some-long-story-name.html
+  
+  _Answer_: One way would be to construct some regular expressions from the route
+  definition above and use them to match on the incoming URL
+  request route.
+  
+  
+  With the fundamentals of server-side JS under our belt, we can move onto what
+  it's like to build a real web application in Node. As was the case with the DOM
+  API, you will likely use some kind of abstraction layer to build your web
+  application...
+  
+  ------------------------------
+  
+  ## Express.js framework
+  
+  As you might expect from something called a "framework", Express is an
+  abstraction over the fundamental web server logic in a Node application.
+  It's small, flexible, extensible, and widely used. Mainly, it provides common
+  HTTP utilities (like a robust router) and _middleware_ APIs (sessions, cookies,
+  auth, etc.).
+  
+  The most basic Express server looks something like this:
+  
+      var express = require('express');
+  
+      // create an app skeleton
+      var app = express();
+  
+      // register a route & its handler
+      app.get('/hello', function (req, res) {
+        res.send('Hello World');
+      });
+  
+      // asynchronously start the server
+      var server = app.listen(3000);
+      console.log('Express app listening on port %d', server.address().port);
+  
+  Requests are routed using functions that mirror the HTTP method names (in the
+  above example, a `GET` method). There are no "controllers" built in, but you may
+  easily create your own.
+  If we add in some standard __middleware__ (a term broadly used to define plugins
+  for a web framework) and move routes to a separate module, we get something
+  like this:
+  
+      // server.js
+      var express = require('express')
+        , app     = express()
+        , routes  = require('./routes');
+  
+      // Config
+      // ----------------------------------------------------
+  
+      // View engine
+      app.set('view engine', 'jade');
+      app.set('views', __dirname + '/views');
+  
+      // Logger
+      app.use(express.logger());
+  
+      // Get / set user cookies
+      app.use(express.cookieParser());
+  
+      // Enable JSON, urlencoded, and multipart request bodies
+      app.use(express.bodyParser());
+  
+      // Serve static files
+      app.use(express.directory(__dirname + '/public'));
+      app.use(express.static(__dirname + '/public'));
+  
+  
+      // Routes
+      // ----------------------------------------------------
+  
+      app.get('/', routes.site.index);
+  
+  
+      // User routes
+  
+      app.all('/users',           routes.users.list);
+      app.all('/user/:id/:op?*',  routes.users.load);
+  
+      app.get('/user/:id',        routes.users.view);
+      app.get('/user/:id/view',   routes.users.view);
+      app.get('/user/:id/edit',   routes.users.edit);
+      app.put('/user/:id/edit',   routes.users.update);
+  
+      // Posts routes
+  
+      app.get('/posts',         routes.posts.list);
+  
+  
+      // Start server
+      // ----------------------------------------------------
+      var server = app.listen(3000);
+      console.log('Express app listening on port %d', server.address().port);
+  
+  A few new things are introduced here:
+  
+  * a __view engine__ is set, in this case the Jade templating engine, which
+    enables `res.render()` to render & send HTML pages in responses
+  * `express.cookieParser()`: enables getting / setting cookies
+  * `express.bodyParser()`: enables parsing of request bodies including `json`,
+    `urlencoded`, and `multipart` middleware (it's actually just a wrapper for
+    those three modules)
+  * `express.directory` & `express.static`: serve directories and their files;
+    essentially a file browser
+  
+  There's also another kind of routing function in use: `app.all`, which
+  attaches "global" logic to a route. In the above example, if we ever hit a route
+  which pertains to a specific user, the first handler that gets run will be
+  `router.user.load` (presumably, fetch a user's data from the database, or
+  a handle for it). The `/op?*` part of the route will make anything past `:id`
+  optional in that route.
+  
+  __Important__: now that there are multiple (asynchronous)
+  handlers attached to a route, we need to explicitly tell express when one
+  handler is finished so that the next one can run (it's impossible to know
+  otherwise). This is done by calling the `next` function in a handler. Here's
+  what the routes file for the above example might look like:
+  
+      // routes.js
+  
+      // assume database functionality is defined elsewhere...
+      var db = require('./db');
+  
+      module.exports = {
+  
+        user {
+  
+          list: function (req, res) {
+            var users = db.getUsers();
+            res.send('users: ' + users.join(', '));
+          },
+  
+          load: function (req, res, next) {
+            req.user = db.loadUser(req.params.id);
+            next();
+          },
+  
+          view: function (req, res, next) {
+            res.send('viewing user ' + req.user.name);
+          },
+  
+          edit: function (req, res) {
+            res.send('editing user ' + req.user.name);
+          },
+  
+          update: function (req, res) {
+            var success = db.updateUser(req.user, req.params);
+  
+            if (success) {
+              res.send('user successfully updated');
+            } else {
+              res.send('user update unsucessful');
+            }
+          }
+  
+        },
+  
+        posts: {
+  
+          list: function (req, res) {
+            res.send('list of posts');
+          }
+  
+        }
+  
+      };
+  
+  
+  If we didn't call `next()` in `load` above, then the request would hang and
+  a client wouldn't get a response on that route.
+  
+  -------------------
+
+  An alternative way to organize routes might be like
+  [this](https://github.com/visionmedia/express/blob/master/examples/route-map/index.js):
+  
+      app.map = function (a, route) {
+        route = route || '';
+  
+        for (var key in a) {
+          switch (typeof a[key]) {
+  
+            // { '/path': {...} }
+            case 'object':
+              app.map(a[key], route + key);
+              break;
+  
+            // get: function () {...}
+            case 'function':
+              if (verbose) console.log('%s %s', key, route);
+              app[key](route, a[key]);
+              break;
+  
+          }
+        }
+      };
+  
+      app.map({
+        '/users': {
+          get:          routes.users.list,
+          del:          routes.users.del,
+  
+          '/:uid': {
+            get:        routes.users.get,
+  
+            '/pets': {
+              get:      routes.pets.list,
+  
+              '/:pid': {
+                del:    routes.pets.del
+              }
+            }
+          }
+        }
+      });
+  
+  The above example abstracts away the route mapping functions so you can simply
+  provide a literal map (object) of routes.
+  
+  _Note_: If in your application you ever need to inspect / reflect upon your
+  currently defined routes, simply look at the `app.routes` object.
+  
+  Middleware isn't just restricted to framework plugins; there's such
+  a thing as _route middleware_, which act like a chained series of actions on
+  a route. Notice how errors are passed along the middleware chain as necessary.
+  
+      // Dummy users
+      var users = [
+          { uid: 0, name: 'tj', email: 'tj@vision-media.ca', role: 'member' }
+        , { uid: 1, name: 'ciaran', email: 'ciaranj@gmail.com', role: 'member' }
+        , { uid: 2, name: 'aaron', email: 'aaron.heckmann+github@gmail.com', role: 'admin' }
+      ];
+  
+      // Middleware
+      // --------------------------------------------------------
+  
+      function fauxAuthentication (req, res, next) {
+        req.authenticatedUser = users[0];
+        next();
+      }
+  
+      app.use(fauxAuthentication);
+  
+  
+      // Routes middleware
+      // --------------------------------------------------------
+  
+      function loadUser (req, res, next) {
+        // You would fetch your user from the db
+        var user = users[req.params.uid];
+        if (user) {
+          req.user = user;
+          next();
+        } else {
+          next(new Error('Failed to load user ' + req.params.id));
+        }
+      }
+  
+      function andRestrictToSelf (req, res, next) {
+        // If our authenticated user is the user we are viewing
+        // then everything is fine
+        if (req.authenticatedUser.uid == req.user.uid) {
+          next();
+        } else {
+          next(new Error('Unauthorized'));
+        }
+      }
+  
+      function andRestrictTo (role) {
+        return function(req, res, next) {
+          if (req.authenticatedUser.role === role) {
+            next();
+          } else {
+            next(new Error('Unauthorized'));
+          }
+        }
+      }
+  
+      // Routes
+      // --------------------------------------------------------
+  
+      app.get('/', function (req, res) {
+        res.redirect('/user/0');
+      });
+  
+      app.get('/user/:id', loadUser, function (req, res) {
+        res.send('Viewing user ' + req.user.name);
+      });
+  
+      app.get('/user/:id/edit', loadUser, andRestrictToSelf, function (req, res) {
+        res.send('Editing user ' + req.user.name);
+      });
+  
+      app.del('/user/:id', loadUser, andRestrictTo('admin'), function (req, res) {
+        res.send('Deleted user ' + req.user.name);
+      });
+  
+  Another way to configure the above user loading is to use `app.param`, which
+  maps logic to URL parameters. In the below example, any time `:user` shows up in
+  an Express route, the callback will be invoked.
+  
+      app.param('user', function (req, res, next, id) {
+        User.find(id, function (err, user) {
+          if (err) {
+            next(err);
+          } else if (user) {
+            req.user = user;
+            next();
+          } else {
+            next(new Error('failed to load user'));
+          }
+        });
+      });
+  
+  _Source: [Express.js examples](https://github.com/visionmedia/express/blob/master/examples)_
+  
+  Here's a rough diagram of how all the above routing & middleware works
+  together in the web server:
+  
+  ![express-diagram](build/images/express-diagram.png)
+  
+  
+  ### Request Handlers
+  
+  So far, we've seen the features of Express that allow us to set up a web server,
+  its middleware, and routes. Now we deal with the last part of the request loop:
+  writing handlers that respond to a client with relevant data.
+  
+  Request handlers are passed two arguments - `req` and `res` - which are the
+  same as the request and response we saw in the barebones Node http server. (As
+  we saw above, there's also a third argument, `next`, used for chaining handler
+  logic together).
+  The middleware in an Express application mostly serves to augment the `req` and
+  `res` objects with added functionality. 
+  
+  * `req.params`: hash of the parsed URL parameters along the whole path
+  * `req.query`: hash of the parsed query string
+  * `req.route`: detailed info about the route, same object as in `app.routes`
+  * `req.get(field)`: HTTP header fields
+  * `req.accepts(type)` / `req.accepted`: check the accepted media types for the
+    request
+  * `req.ip`: client IP
+  
+  In a request handler, you'll want to inspect the request, do some business
+  logic, and then construct a response. `res` contains functionality such as:
+  
+  * `res.get` / `res.set`: HTTP header fields
+  * `res.redirect`
+  * `res.send`: send an HTML, JSON, XML, etc. response
+  * `res.render`: if a view engine is set, this will invoke the engine and
+    generate HTML based on locals you pass in or those that have been set through
+    middleware
+  
+  
+  ------------------------------
+  
+  __References__:
+  
+  * [Backbone Fundamentals](http://addyosmani.github.io/backbone-fundamentals/#creating-the-back-end)
+  * [Express / MongoDB tutorial](http://howtonode.org/express-mongodb)
+  * [Express API reference](http://expressjs.com/3x/api.html)
+

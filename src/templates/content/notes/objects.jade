@@ -1,0 +1,443 @@
+:markdown
+
+  JavaScript Objects
+  ==================
+
+  Reference: ___Eloquent JavaScript___ and ___JavaScript: The Good Parts___.
+
+  --------------------
+
+  Objects are the building block of any consequential JS program -- you'll need to
+  understand them intimately to write good code. All JS values that are not simple
+  types (numbers, strings, booleans, undefined) are objects.
+
+  There are no classes or static types in JS, so there are very few constraints on
+  property names and values. Objects can contain other objects, so you can easily
+  represent trees or graphs.
+
+  There is one slightly tricky feature of objects, and that is prototypical
+  inheritance. As the name suggests, it's similar to class-based (or classical)
+  inheritance. (More on this later).
+
+  As we've seen, there's a convenient literal notation for objects:
+
+      var flight = {
+        airline: "Oceanic",
+        number: 815,
+        departure: {
+          IATA: "SYD",
+          time: "2004-09-22 14:55",
+          city: "Sydney",
+          "gate-number": 17
+        },
+        arrival: {
+          IATA: "LAX",
+          time: "2004-09-23 10:42",
+          city: "Los Angeles",
+          "gate-number": "46A"
+        },
+      };
+
+  When a property name is not a legal JS name (contains dashes or is a reserved
+  word), it requires quotes (like `"gate-number"` above). Similarly, in retrieval,
+  you must sometimes use the brackets refinement syntax (less preferred than the
+  `.` refinement syntax):
+
+      var prop = "gate-number";
+
+      flight.departure.city               // "Sydney"
+      flight.departure["gate-number"]     // 17
+      flight.arrival[prop]                // "46A"
+
+  Attempts to access an undefined property will give you, as you might expect,
+  `undefined`. If you try to further access a property within this undefined
+  property, JavaScript will throw a (strangely-named) `TypeError`.
+
+      flight.equipment        // undefined
+      flight.equipment.model  // TypeError: Cannot read property 'model' of undefined
+
+  Property updates work just like variable assignment. Objects are always passed
+  around by reference; they are never copied (you might write a function to do
+  this manually).
+
+  The `delete` keyword removes a property from an object without touching anything
+  on the prototype chain:
+
+      delete flight.number
+
+
+  ### Uses / Patterns
+
+  The simplicity of objects means that they are widely used in various situations
+  to manage data.
+
+  * When an function takes in many arguments, it can be tricky to remember their
+    exact ordering, especially since there are no static types. Instead of a long
+    list of arguments, pass in a single object containing all the necessary data:
+
+        var courseModel = mkCourse('JavaScript', 'CIS', 197, instructor, 20);
+
+        var courseModel = mkCourse({
+        name: 'JavaScript',
+          dept: 'CIS',
+          code: 197,
+          instructor: instructor,
+          enrollment: 20
+        });
+
+  * JavaScript Object Notation (JSON) is a lightweight data format used
+    universally in web programming these days (it's cleaner / more lightweight
+    than SOAP, XML, etc.).  JSON allows a subset of the object syntax used in
+    JavaScript. That is to say, all JSON data is a valid JS object, but not all
+    JS objects are valid JSON. It's common to fetch JSON data with an AJAX request
+    and use it in a client-side application like so:
+
+        var courseData = $.get('http://www.penncoursereview.com/CIS/197');
+
+        console.log(courseData);    // { name: 'JavaScript', dept: 'CIS', ... }
+
+  * Arrays are actually just objects with some syntactic sugar and extra methods.
+    They look like this:
+
+        var a = [ 'a', 'b', 'c' ];
+
+        {
+          0: 'a',
+          1: 'b',
+          2: 'c'
+        }
+
+    So when you're using an Array, you're really using an object. Keep this in
+    mind when thinking about prototypes and inheritance.
+
+  * _Global abatement_. When you consider the problems associated with global
+    scoping of variables in JS, you might be thinking -- how do I share
+    application state across all my files if I want to avoid global variables?
+    It's fairly accepted practice to create a _single_ global object variable that
+    you share between files and which maintains this state. It's kind of like
+    namespacing:
+
+        // Globals!
+        MY_APP = {
+          appId: 'asdf43f349hukjasdf9843',
+          appSecret: 'shhh'
+        };
+
+
+
+
+
+  ### Prototypical Inheritance
+
+  All objects are linked to their _prototype_, an object from which they can
+  inherit properties. Those created as object literals are linked to
+  `Object.prototype` (built into the language).
+
+  When you attempt to retrieve an object property, JS will walk up the prototype
+  chain until it finds a matching property name (known as _delegation_).
+
+  Prototypes are __dynamic__: changing or adding a property on one will make it
+  immediately available to all objects that are linked to it.
+
+  * The Array methods you access when dealing with arrays (like `join`, `push`,
+    `pop`) are stored in the global `Array.prototype` rather than every instance
+    of an Array.
+  * You can do some powerful things by updating a built-in prototype...
+
+        var a = [ 'a', 'list', 'of', 'tokens' ]
+          , b = [ 'this', 'is' ];
+
+        // Concatenates another array to the end of this one. Although this method
+        // is defined after a and b are initialized, they "inherit" the method.
+        Array.prototype.concat = function (other) {
+          this.push.apply(this, other);
+        };
+
+        b.concat(a);
+        console.log(b.join(' '));     // --> 'this is a list of tokens'
+
+    (_Note_: in hindsight, there's actually a built-in method called
+    `Array.prototype.concat` already. So you wouldn't want to overwrite it like
+    this.)
+
+  * And also some dangerous things! Let's say we wanted to swap the names of `pop`
+    and `shift`, which remove an element from the tail and head of an Array,
+    respectively:
+
+        var old_pop = Array.prototype.pop;
+
+        Array.prototype.pop = Array.prototype.shift;
+        Array.prototype.shift = old_prop;
+
+    With this last bit of code, if you loaded anyone else's JS code (like the
+    jQuery library, etc.), any code that relies on `Array.prototype.pop` or
+    `Array.prototype.shift` wouldn't work properly. __Lesson__: be careful with
+    global prototypes.
+
+
+  ___Keep in mind___: The delegation of properties sometimes creates problems
+  when you are only concerned with the immediate object in question (for
+  reflection or enumeration). In this case, it's helpful to use the
+  `hasOwnProperty` function available to all objects:
+
+      for (prop in flight) {
+        if (flight.hasOwnProperty(prop)) {
+          console.log(prop + ": " + flight[prop]);
+        }
+      }
+
+
+  There's actually another way to solve this problem by being more specific about
+  what type of property you are defining. The `Object.defineProperty` method lets
+  you set a property on an object and _configure_ it with a few parameters,
+  including whether the property is enumerable, writable, etc. See
+  [its documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty).
+
+      Object.defineProperty(flight, 'toString', {
+        enumerable: false,
+        value: function () { ... },
+        writable: false
+      });
+
+
+
+  _Note_: you are not guaranteed the order of properties with a `for in` loop on
+  objects. If you are really concerned with enumerating the properties in order,
+  it's best to list them out manually in an array:
+
+      var categories = [
+            'cold'
+          , 'hot'
+          , 'espresso'
+          ]
+        , coffeeProducts = {
+            cold: [ 'iced', 'cold brew' ]
+          , hot: [ 'pour over', 'french press', 'drip' ]
+          , espresso: [ 'americano', 'macchiato', 'shot' ]
+          };
+
+      for (var i = 0; l = categories.length; i < l; i++) {
+        var prop = categories[i];
+        console.log(coffeeProducts[prop]);
+      }
+
+
+
+
+
+
+
+
+
+
+  ### Pseudo-classes
+
+  JavaScript is slightly conflicted about the nature of its inheritance, so its
+  constructor syntax makes it seem somewhat classical. You will see many objects
+  created with the `new` keyword:
+
+      var a = new Array(16);
+
+      var americano = new Coffee({
+        type: 'espresso'
+      , variations: [ 'hot', 'iced' ]
+      , preparation: 'Pull two espresso shots and pour them into a mug of water...'
+      };
+
+  The `new` keyword essentially tells the runtime to __invoke the `constructor`
+  method from a function's prototype__.
+
+  Before we further inspect how constructors work, let's consider what happens in
+  the JS runtime when a function is created (they're objects too, after all).
+
+  When __a function object is created__, the internal `Function` constructor that
+  produces the function object runs some code like this:
+
+      this.prototype = { constructor: this }
+
+  This behavior seems somewhat strange. Why do we need regular ol' functions to
+  have constructors associated with them? Only those functions that actually
+  construct class-like objects should behave like this, right? Here we encounter
+  one of the flaws in the way JS does inheritance. _JavaScript doesn't
+  discriminate whether functions are meant to be constructors_. This means that
+  you as a programmer ought to demarcate constructors yourself through naming
+  conventions (capitalize the first letter of the function name).
+
+
+  When JS runs a line of code invoking the `new` keyword, some additional code
+  gets run after `this.prototype = { constructor: this }`. Note that `this`
+  represents the constructor function being invoked):
+
+      var that = Object.create(this.prototype),
+          other = this.apply(that, arguments);
+
+      if (typeof other === 'object' && other !== null) {
+        return other;
+      } else {
+        return that;
+      }
+
+  The method `Object.create` (see
+  [documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create))
+  simply creates a new empty object with its `prototype` set to a provided value.
+  Then the constructor function is applied to the new object with proper arguments
+  forwarded. If the constructor returned a value, that value is returned as the
+  newly constructed object. Otherwise, the new object from `Object.create` is
+  returned.
+
+  Knowing this, we can write some pseudoclassical code like this:
+
+      var Person = function (first, last, email) {
+        this.firstName = first;
+        this.lastName = last;
+        this.email = email;
+      };
+
+      Person.prototype.getName = function () {
+        return this.firstName + " " + this.lastName;
+      };
+
+      Person.prototype.getEmail = function () {
+        return this.email;
+      };
+
+  The `Person.prototype` object now looks something like a class definition:
+
+      {
+        constructor: function (first, last, email) { ... },
+        getName: function () { ... },
+        getEmail: function () { ... }
+      }
+
+  A `Person` object would behave like so:
+
+      var adi = new Person('Adi', 'Dahiya', 'adahiya@seas.upenn.edu');
+      console.log(adi.getName());       // --> "Adi Dahiya"
+
+  And let's say we wanted to inherit from this `Person` "class":
+
+      var Instructor = function (first, last, email, course) {
+        this.firstName = first;
+        this.lastName = last;
+        this.email = email;
+        this.course = course;
+      };
+
+      Instructor.prototype = new Person();
+
+      Instructor.prototype.getDescription = function () {
+        var name = this.getName();
+        return name + " teaches " + this.course;
+      };
+
+      var adi = new Instructor('Adi', 'Dahiya', 'adahiya@seas.upenn.edu', 'CIS 197');
+      console.log(adi.getDescription());  // --> "Adi Dahiya teaches CIS 197"
+
+  A couple things to note:
+
+  * The `Instructor` constructor has to re-do the work of the `Person`
+    constructor. Can you think of a way we can reuse the logic in `Person()` with
+    some clever function application?
+  * I didn't set `Instructor.prototype = Person.prototype`. This would
+    have allowed `Instructor` access to the `Person` methods, but it would have
+    also made it a two-way relationship, where any methods added to
+    `Instructor.prototype` are also available to all `Person` instances, which we
+    _don't_ want. By instantiating a new `Person` object, we get the benefits of
+    its prototype while maintaining separation.
+
+  ----------------
+
+  We seem to be getting somewhere now! This behavior looks kinda object-oriented,
+  doesn't it? But there are some wonky things going on.
+
+  * The inheritance and "class" definition syntax looks weird because of the use
+    of `prototype` everywhere.
+  * All properties are public.
+  * You can't access the `super` method.
+
+  Also, as I indicated above, there is some danger in defining a constructor like
+  this. What would happen if you forgot the `new` keyword when trying to use
+  a constructor? (hint: how are functions regularly invoked?)
+
+  Again, this design flaw in JavaScript is mitigated by capitalizing the first
+  letter of constructor functions. The hope is that a programmer reading the code
+  can easily identify missing `new` keywords.
+
+  As for the flaws mentioned above:
+
+  * There are limited alternatives for object-oriented programming that do not use
+    the `prototype` syntax like this. Compile-to-JS languages (which we may cover
+    later in the course) provide some great syntactic sugar that abstracts away
+    this kind of low-level class definition.
+  * Use closures in your JS modules to maintain private variables.
+  * If you set up the classes right, you can use something like
+    `Person.prototype.getName(...)` to access "super" methods.
+
+  ### Object.create
+
+  In ES5 (the current JS standard), there was a new method introduced called
+  `Object.create`, which provides some simple syntax for __differential
+  inheritance__. Its first argument is the prototype of the object you want to
+  inherit from (or `null`), and the second (optional) argument is map of
+  properties you want to set on the new object.
+
+  Another way to express the above `Instructor` class using `Object.create`:
+
+      var Instructor = function (first, last, email, course) {
+        Person.apply(this, arguments);
+        this.course = course;
+      };
+
+      Instructor.prototype = Object.create(Person.prototype);
+
+      Instructor.prototype.getDescription = function () {
+        var name = this.getName();
+        return name + " teaches " + this.course;
+      };
+
+  This accomplishes the earlier goal of separating `Instructor` and `Person`'s
+  prototype (there's a level of indirection since `Object.create` produces a new
+  object) while also invoking the `super` constructor.
+
+  Both this and the above method (in the section "Pseudo-classes") for
+  object-oriented programming in JavaScript are acceptable. The `Object.create`
+  method slightly reduces the number of lookups on the prototype chain when
+  invoking "class" methods.
+
+  -------------------------------------------------------------------------------
+
+  __Here's a real world example__ of inheritance from the
+  [source code](https://github.com/cis197s14/website/blob/master/app/assets/javascripts/main.js)
+  for the CIS 197 website. Note that the actual code in the repository is compiled
+  from Coffeescript, not hand-written (but you'll notice the compiler produces
+  very readable code!).
+
+      /*
+      * Manages state of the section-navigation functionality in the sidebar.
+      */
+      var SectionNav = (function () {
+
+        SectionNav.ACTIVE_CLASS = 'active';   // why can we do this up here?
+
+        function SectionNav (target) {
+          this.selected = '';
+          this.target = target;
+          this.sections = this.target.children('section');
+          ...
+        };
+
+        SectionNav.prototype.navigateTo = function (sectionName) {
+          this.sections.removeClass(SectionNav.ACTIVE_CLASS);
+          this.target.children("." + sectionName).addClass(SectionNav.ACTIVE_CLASS);
+
+          this.nav.children().removeClass(SectionNav.ACTIVE_CLASS);
+          this.nav.find("." + sectionName).addClass(SectionNav.ACTIVE_CLASS);
+          this.selected = sectionName;
+        }
+
+        ...
+
+        return SectionNav;
+
+      })();
+

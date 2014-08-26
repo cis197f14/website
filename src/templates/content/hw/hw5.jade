@@ -1,0 +1,200 @@
+:markdown
+  Homework 5: Playing Pokémon
+  ===========================
+
+  Due _Sunday, March 23 at 9 AM_.
+  
+  Implementation stub available in the
+  [homework repository](https://github.com/cis197s14/hw/blob/master/hw5/).
+
+  This assignment will extend your Backbone.js experience to include topics we've
+  recently covered in class:
+  
+  * Backbone routing
+  * Model persistence
+  
+  Here's a general outline of the new functionality we're adding to the Pokémon
+  game:
+  
+  * Separate game modes: map building and playing the game
+  * Larger map building area & smaller visible map
+  * URL routes point to map regions
+  * Persistent map to local storage
+  
+  
+  ### Before starting this assignment
+  
+  Review the [documentation](http://backbonejs.org/) on Backbone's Router and
+  [these code samples](https://github.com/cis197s14/lectures/tree/master/lecture-5)
+  from lecture.
+  
+  ### Application Structure
+  
+  Our code is starting to get a little complicated and disparate for one file, so
+  we're going to split it up and move all scripts to a `app/` directory. Take
+  a look at `index.html`. To share information between our scripts, we'll use a
+  global object called `POKEMON`, which is declared and initialized in
+  `index.html` before all of our application scripts. (There are better ways to do
+  this, including dependency injection and requireJS modules, but for now we'll
+  stick to basic script loading.)
+  
+  * `app/utils.js` is loaded first; it contains global variables and utility
+    functions.
+  * `app/builder.js` contains the `Builder` model and `PaletteView`
+    & `BuilderView`.
+  * `app/player.js` contains the `Player` model and `PlayerView`.
+  * `app/map.js` contains a `MapView`, which will be used for the "playing" game
+    mode.
+  * `app/pokemon.js` is a stub for the overall application. It is loaded last
+    because it depends on everything else (models, views, etc.) being available.
+  
+  __`Builder`, `PaletteView`, and `BuilderView`__ functionality (up to hw4) is
+  provided for you already in `app/builder.js`. One difference in rendering you
+  might notice from hw4 is that a new `<div>` is created for `BuilderView` rather
+  than attaching to the existing `#map` element on the page (explicitly setting
+  the view's `el`). This is necessary for removing / re-rendering of views that
+  occurs when switching game modes. 
+  
+  __`Player` and `PlayerView`__ are left blank in `app/player.js` -- you should copy
+  over your code from hw4 to use as a implementation stub. Try to update your code
+  to use the global variables from `POKEMON.globals`. In addition, for the
+  same reason as above for `BuilderView`, if you were _explicitly setting_
+  `PlayerView`'s element in your implementation, you'll likely need to edit your
+  code to instead rely on Backbone's internally created `el`.
+  
+  _Note_: if you are lacking working hw4 code for this portion, please email the
+  TAs.
+  
+  __`app/pokemon.js`__ contains code to initialize models and start off a custom
+  Backbone router.
+  
+  -------------------------
+  
+  ## Separate Game Modes
+  
+  If you open up `index.html`, you'll notice a few controls available at the top
+  right of the page: __Build__, __Play__, and __Reset__. We'll use url routes to
+  invoke all these actions, so these controls simply point to different routes
+  (`#build`, `#play`, `#reset`).
+  
+  ___TODO___: Create a `'build'` route in `pokemon.js`. Its handler should
+  construct a new `BuilderView` (but _only if it doesn't exist already_).
+  `render` the view and call `delegateEvents` to re-bind event handlers. Remember
+  that you'll need to wait until DOM ready to construct any views. All the
+  necessary models you need are already available here.
+  
+  ___TODO___: Create a `'play'` route whose handler constructs a new `MapView` and
+  a new `PlayerView` if they don't exist. Render these views and delegate their
+  events. Be sure to set the `playerView`'s element to that of the `mapView` (this
+  is the same as in hw4).
+  
+  _Note_: Reference the hw4 implementation stub if you need help constructing
+  these views.
+  
+  
+  ___TODO___: Revisit both of these route handlers to ensure that the old view
+  is destroyed when the game mode is switched. For example, when the `build` route
+  is hit, you should __undo__ the work of `render` and `delegateEvents` by calling
+  `undelegateEvents` and `remove` (in that order) on __both__ `mapView` and
+  `playerView`.
+  
+  ![game-modes](build/images/gifs/game-modes.gif)
+  
+  Although `MapView` isn't implemented completely, you should be able to switch
+  game modes at this point between the map builder and an empty map playing view
+  (using the controls at the top right).
+  
+  -------------------------
+  
+  ## Visible Map Area
+  
+  In "play" mode, we're only going to expose a small portion of the map
+  (of width & height equal to `POKEMON.globals.MAP_SIZE`) to emulate a
+  handheld-like game experience.
+  
+  ![build-play](build/images/gifs/build-play.gif)
+  
+  The coordinates of the top-left corner of the
+  visible map area will be encoded in the url; the route will now look something
+  like the following (it represents row 5 and column 8):
+  
+      play/r5/c8
+  
+  _Hint_: take a look at the lecture 5 code to see how to define route parameters
+  like this.
+  
+  ___TODO___: Once you define this route and parse the row and column in its
+  handler, you'll need to decide how to make `MapView` __only show the relevant
+  slice of the map__ (_Hint_: you may want to make `MapView`'s model point to
+  the `Builder` model when that view is constructed). There are edge cases that
+  need to be handled as well, as you can see in the above demonstration.
+  
+  ___TODO___: When the player reaches the edge of the visible map, make the
+  application re-route to shift the visible map area (this will force your views
+  to be rebuilt). For example, if the current route is `play/r0/c0` and Pikachu
+  just tried to move to the tile at row 0, col 10,
+  you might want to shift the map to `play/r0/c2`. You should do this using
+  Backbone's `router.navigate`
+  ([docs](http://documentcloud.github.io/backbone/#Router-navigate)).
+  Be sure to pass in the appropriate options for `trigger` and `replace` to this
+  function.
+  
+  This is the tricky part of the whole assignment, especially the edge
+  cases. One strategy is to let the `Player` model know about the visible
+  map area and have it re-route under certain conditions in its moving functions.
+  
+  -------------------------
+  
+  ___TODO___: Go back to the `play` route handler you defined earlier. Make it
+  re-route the application (using `navigate`) to a map slice centered on the
+  player's current position (of the form `play/r0/c0`).
+  
+  ___Extra Credit___ (3pts): create a minimap next to the regular map that shows
+  you where you are in relation to the whole map (only in "play" mode).
+  
+  
+  -------------------------
+  
+  ## Map Persistence
+  
+  To persist the state of the map tiles, we'll use remarkably simple
+  `localStorage` API. This is an HTML5 feature that stores information in the
+  browser to use between sessions. It is a global object available as
+  `window.localStorage` that has special getter / setter semantics, but a simple
+  syntax that works just like objects.
+  
+      localStorage['foo'] = 'bar';
+  
+      console.log(localStorage['foo']); // 'bar';
+  
+  The one disadvantage is that it can only store strings, so to _store_ any
+  array-like or object-like data, you'll need to use the built-in `JSON.stringify`
+  (and `JSON.parse` to complement this when _retrieving_ data).
+  
+  ___TODO___: Edit the definition of the `Builder` model to save the current map
+  tiles to localStorage whenever the tiles change using Model events. Use the
+  global constant `POKEMON.globals.LOCALSTORAGE_KEY` to index into the
+  `localStorage` object. In addition, edit this model's `initialize` method to
+  parse stored tiles from localStorage if they are available (or fall back to
+  generating new ones).
+  
+  Now when you reload your web page, the map tiles should stay in place! Magic!
+  
+  ![map-persistence](build/images/gifs/map-persistence.gif)
+  
+  ___TODO___: Add a method to `Builder` that resets all the map tiles to the default
+  swatch (essentially erases the whole map). Then, add a Backbone route handler
+  for the route `'reset'` that invokes this function. If you implement this
+  correctly, the map should reset when you click "Reset" in the controls on the
+  top right of the page.
+  
+  -------------------------
+  
+  ### Notes
+  
+  If you find yourself spending an inordinate amount of time on this assignment,
+  please seek help on Piazza, in office hours, or by appointment. 
+  
+  Your final output should function like the demo gif under the "Visible Map Area"
+  heading above.
+  

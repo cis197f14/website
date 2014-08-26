@@ -1,0 +1,185 @@
+:markdown
+  CoffeeScript
+  ============
+  
+  ## Why use a language that _compiles_ to JavaScript?
+  
+  As you write more JavaScript, you might get tired of avoiding the bad parts,
+  want things like static typing, or even just find JavaScript's syntax too clunky
+  for your taste. However, you can't just start using a random other language
+  instead of JavaScript because no other languages run in the browser.
+  
+  That's why compile to JavaScript languages exist. They let you write in a
+  different language, and a cross-compiler converts it to JS so you can run it in
+  the browser.
+  
+  CoffeeScript is probably the most popular compile-to-js language. It lets you
+  write less code that automatically passes JSHint and is arguably more readable.
+  There are other options like Dart by Google and TypeScript by Microsoft that
+  provides static typing, but those won't be covered here.
+  
+  ## Quick overview of CoffeeScript syntax
+  
+  Note: Taken and adapted from [coffeescript.org](http://www.coffeescript.org)
+  
+      # Assignment:
+      number   = 42
+      
+      # Conditions:
+      if number == 42
+        console.log 'here'
+        console.log 'number is 42'
+      else
+        console.log("number is #{number}")
+      # Existence:
+      alert "I knew it!" if elvis?
+      
+      # Functions:
+      square = (x) -> x * x
+      
+      # Objects:
+      math =
+        root:   Math.sqrt
+        square: square
+        cube:   (x) -> x * square x
+        nested1: {a: 1, b: 2}
+        nested2:
+          a: 1
+          b: 2
+      
+      list = [1, 2, 3, 4, 5]
+      # Array comprehensions:
+      cubes = (math.cube num for num in list when num > 2)
+      
+      # for in loops
+      # prints 1, 2, 3, 4, 5 not 0, 1, 2, 3, 4, 5
+      for el in list
+        console.log e
+      
+      for k, v of math
+        console.log k, v
+
+  Some things to note:
+
+  * There are no semicolons. It actually results in a compiler error if you end a
+    line with one. This makes it impossible to have those weird semicolon
+    insertion bugs.
+
+  * There are no `var`s. The `var` keyword is undefined in CoffeeScript. Variables
+    are local by default. If you want to make it global you need to attach it to a
+    global object like `window`. This prevents accidentally creating global
+    variables, and some easy to miss bugs caused by variable hoisting.
+
+  * CoffeeScript is whitespace sensitive. See in the if statement, instead of
+    using braces, the code is just tabbed over.
+
+  * You don't need to use `===`, it's actually a compiler error. `==` are
+    converted to `===` during the compilation.
+
+  * You don't need to use `()` when calling a function with arguments. This can
+    get confusing with nested function calls, though. Also you need the parentheses
+    when calling a function without arguments (unlike Ruby).
+
+  * CoffeeScript has syntactic sugar for string interpolation, letting you insert
+    CoffeeScript code in the middle of the string with `\#\{\}`. This only works
+    inside double quotes, though.	
+
+  * Everything is a statement, so you can use Ruby style one line if statements,
+    i.e. `doSomething() if condition`.
+
+  * CoffeeScript has an existential operator `?`. It compiles to
+    `typeof elvis !== "undefined" && elvis !== null`.
+
+  * Functions are defined with `() ->`. The arguments go in the parentheses and
+    once again it's whitespace sensitive instead of using braces.
+
+  * Functions implicitly return the last line. Explicit `return` statements can
+    also be used.
+
+  * Objects can be defined either by using whitespace and ommiting the braces and
+    commas, or in the standard way. Nested objects also work fine either way.
+
+  * CoffeeScript supports list comprehensions similar to python.
+
+  * For in loops on lists work as you would expect coming from other languages.
+    It iterates over the elements instead of the indices.
+
+  * CoffeeScript has `for of` loops for iterating over keys/values objects.
+
+
+  ## CoffeeScript's more interesting features
+  
+  __Classes__:
+  
+  CoffeeScript provides some nice abstraction for object oriented programming.
+    
+      class Animal
+        constructor: (@name) ->
+  
+        move: (meters) ->
+          alert @name + " moved #{meters}m."
+  
+      class Snake extends Animal
+        move: ->
+          alert "Slithering..."
+          super 5
+  
+      class Horse extends Animal
+        move: ->
+          alert "Galloping..."
+          super 45
+  
+      sam = new Snake "Sammy the Python"
+      tom = new Horse "Tommy the Palomino"
+  
+      sam.move()
+      tom.move()
+    
+  Some things to note:
+  
+  * You don't have to use the convoluted psuedo-class construction with
+    prototypes. You just use the keyword `class` and list out (class & instance)
+    methods & properties. (You can still access `.prototype` using the `::`
+    operator, though).
+  
+  * If you define a `constructor` function, it is called when an object is
+    instantiated.
+  
+  * `@` is syntactic sugar for `this.` access.
+  
+  * To set up inheritance, just use the word `extends`, similar to Java.
+  
+  * You can call the overridden superclass's function using the `super` keyword.
+  
+  __Fat Arrow__:
+  
+  When defining a function, you can use a fat arrow `=>` (instead of `->`) to bind
+  a function to the current value of `this`. This is useful for setting callbacks,
+  among other things.
+  
+      Account = (customer, cart) ->
+        @customer = customer
+        @cart = cart
+  
+        $('.shopping_cart').bind 'click', (event) =>
+          @customer.purchase @cart
+  
+  ## How to use CoffeeScript
+  
+  Install `coffee` globally with `sudo npm install -g coffee-script`.
+  
+  The standard file extension is `.coffee`. You can run a file without compiling
+  it using `coffee <name>.coffee`.
+  
+  You'll generally want to have your CoffeeScript files automatically compiled.
+  You can do this with a command like `coffee -mo js/ -cw coffee/`.
+  In particular, this will:
+
+  * take all of the `name>.coffee` files in the `coffee/` directory and save
+    them to `<name>.js` in the `js/` directory
+  * update the files in `js/` as the files in `coffee/` change
+  * create source maps, allowing the browser to give you line numbers in your
+    CoffeeScript files for errors instead of the line numbers in your compiled
+    JS files.
+
+

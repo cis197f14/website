@@ -1,0 +1,131 @@
+:markdown
+  Reactive Frameworks & Libraries
+  ===============================
+  
+  ## Motivations for automatic reactivity
+  
+  So far, we've learned how to deliver rich client-side applications by
+  organizing our code with __Backbone__ and leveraging libraries like
+  __Underscore__ and __jQuery__ that abstract away some low-level front end logic.
+  We have not yet completed our journey on the ladder of abstraction.
+  
+  The Pokémon application in homework assignments has lots of interactivity driven
+  by an event system. To keep the _view_ in sync with your _models_, you had to
+  listen for certain events and re-render some portion of the DOM. This pattern
+  ends up being quite common. Consider the following view code:
+  
+      var PlayerView = Backbone.View.extend({
+  
+        events: {
+          // ...
+        },
+  
+        initialize: function () {
+          this.tmpl = _.template($('#player-tmpl').html());
+  
+          this._bindKeyboardEvents();
+  
+          // Keep model <-> view in sync
+          this.model.on('change:hidden', this.toggle, this);
+  
+          // Last argument sets context for callback execution
+          this.model.on('change:row change:col', this.position, this);
+        },
+  
+        render: function () {
+          var compiledTmpl = this.tmpl(this.model.toJSON());
+          this.$el.html(compiledTmpl);
+        },
+  
+        toggle: function () {
+          this.$el.css({
+            display: this.model.get('hidden') ? 'block' : 'none'
+          });
+        },
+  
+        position: function () {
+          this.$el.css({
+            left: this.model.get('col') * TILE_SIZE,
+            top:  this.model.get('row') * TILE_SIZE
+          });
+        }
+  
+        _bindKeyboardEvents: function () {
+          $('document').on('keypress', function (e) {
+            // ...
+            this.model.set('row', this.model.get('row') + 1);
+          });
+        }
+  
+      });
+  
+  Although this is a simplified version of the `PlayerView` class from homework
+  assignments and contains slightly different implementation logic, it helps
+  illustrate the motivation behind further abstraction of UI reactivity. You can
+  see that we're explicitly writing "wiring" code to keep the view and the view's
+  DOM elements in sync with the model as the model's values change. When you write
+  a lot of Backbone applications, you'll realize this is _very_ common. There are
+  Backbone extensions available to mitigate this; for example, consider
+  `Backbone.declarative` ([link](https://github.com/Codecademy/backbone.declarative)),
+  which lets you bind handlers for model events as simply as you would DOM events:
+  
+      var PlayerView = Backbone.View.extend({
+  
+        events: {
+          // ...
+        },
+  
+        modelEvents: {
+          'change:row change:col': 'position',
+          'change:hidden': 'toggle'
+        },
+  
+        initialize: function () {
+          // ...
+        }
+  
+        // ...
+  
+      });
+  
+  ...but this is just syntactic sugar. To solve this problem more elegantly, we'll
+  have to step outside of our comfort zone in the Backbone library and dive into
+  some alternative front end frameworks. In particular, we're looking for a
+  feature called ___data binding___ -- a system that automatically keeps model
+  data in sync with its representation in the view and vice versa.
+  
+  #### Front end frameworks / libraries (refer to slides)
+  
+  __Data binding__ has been around for a while in more traditional UI programming
+  contexts. In the JS community, a number of frameworks and libraries have
+  developed in the past few years to fulfill these reactive UI requirements. The
+  most notable are [_AngularJS_](http://angularjs.org/),
+  [_Ember.js_](http://emberjs.com/), and [_Knockout_](http://knockoutjs.com/).
+  These frameworks provide a lot more functionality than Backbone and as a result,
+  they are also more prescriptive about how you should build and structure your
+  application.
+  
+  -------------------------------------------------------------------------------
+  
+  ## Our first AngularJS application
+  
+  _But first_: a crash course on the ___Dependency Injection___ pattern.
+  
+  In the same way that _events_ are an inversion of control flow, _dependency
+  injection_ represents an inversion of module loading & dependency management.
+  The key idea in this design pattern is that modules are _provided_ the services
+  that they need instead of being allowed to search for or "import" these
+  services.
+  
+  
+  -------------------------------------------------------------------------------
+  
+  ### Notes
+  
+  Along the same lines as client-side reactivity, think for a minute about the
+  interaction between the client and server.
+  We don't even have the luxury of _events_ here! We have to
+  resort to individual server requests to get data, and even these are only
+  possible in one direction (client -> server). There are many situations where
+  it's desirable to the client to ___react___ to a server action and vice versa.
+  

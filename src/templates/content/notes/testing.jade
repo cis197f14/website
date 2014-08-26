@@ -1,0 +1,374 @@
+:markdown
+  Testing, Tools, & Build Systems
+  ===============================
+  
+  ## Does my code work?
+  
+  By this point, I hope you've had a chance to get your feet wet with the
+  wonderful Chrome debugger. However, as you're well aware, stepping through code
+  isn't the only way to verify your programs; _testing_ is an important tool for
+  any kind of software developer.
+  
+  In JavaScript's quest to become a "real" language, one of the important
+  milestones is a community & standards that encourage safe & valid code through
+  testing, both for TDD and code maintainability. The language's dynamic nature
+  and loose typing makes tests all the more important.
+  The browser environment also complicates things, especially when you throw in
+  cross-browser compatibility.
+  
+  One positive outcome of the whole situation is that the browser sandbox
+  environment ensures that your code can't be _too_ harmful for the user. In Node,
+  however, this protection doesn't exist, so you generally have to be a little
+  more careful.
+  
+  There are no testing features built-in to the ECMAScript standard (no `assert`
+  or the like). There are, however, multiple libraries out there that will help
+  you build test suites using what's already built-in (because all you really
+  need at a low level are equality checks and `typeof`).
+  
+  ## Testing libraries & frameworks
+  
+  JS testing libraries include both (1) assertion libraries and (2) testing
+  frameworks. They are built with modularity in mind such that the former are
+  typically able to power any given testing framework.
+  
+  Assertion libraries:
+  
+  * [`assert`](http://nodejs.org/api/assert.html), a core module in Node
+  * [`should.js`](https://github.com/visionmedia/should.js)
+  * [`expect.js`](https://github.com/LearnBoost/expect.js/)
+  * [Chai](http://chaijs.com/)
+  
+  Testing frameworks:
+  
+  * [Jasmine](http://jasmine.github.io/2.0/introduction.html)
+  * [Mocha](http://visionmedia.github.io/mocha/)
+  * [QUnit](https://qunitjs.com/)
+  
+  All of these are fairly popular in their own right, so you may choose from them
+  as you wish. You'll also find other more customized libraries out there.
+  
+  I mentioned TDD earlier -- you'll find many of these libraries fall in line with
+  TDD (and its close relative, BDD) standard practices. Some of the syntax is
+  derived from _RSpec_ and other testing standards in the Rails ecosystem; this
+  may be attributed to the fact that many web developers transitioned from writing
+  web applications in RoR to heavier client-side applications in JS.
+  
+  #### Writing unit tests
+  
+  Let's take a look at what it takes to test some simple functions with Mocha and
+  `should.js`. We'll be writing some tests for the HW1 assignment.
+  Mocha provides a way to run test suites using its command line tool,
+  which automatically loads the framework, runs a test file, and generates some
+  output based on a specified test "reporter":
+  
+      mocha --reporter spec test-suite.js
+  
+  `test-suite.js`, then, might look like this:
+      
+      /*
+       * Import assertion library and the modules to test.
+       */
+      var should  = require('should')
+        , hw1     = require('../exercises')
+        , key     = require('../exercises-solution');
+  
+      /*
+       * Lifted from hw1 stub
+       */
+      var priceList = {
+        eggs: 2.50,
+        milk: 3.00,
+        bread: 2.75,
+        orangeJuice: 4.25,
+        chocolate: 1.50
+      };
+  
+      /*
+       * Describe a test suite. These may be nested to provide more structure.
+       */
+      describe('(Exercise 1) Array methods', function () {
+        var a;
+  
+        /*
+         * Runs once before each test within this suite.
+         */
+        beforeEach(function () {
+          a = [ 1, 2, 3, 4, 5 ];
+        });
+  
+        /*
+         * A single test that contains one or more assertions. Mocha's DSL
+         * allows us to write tests that look like plain english.
+         */
+        it('should sum elements', function () {
+          hw1.arrayMethods.sum(a).should.equal(15);
+        });
+  
+        /*
+         * It's good practice to provide descriptive test names so you can easily
+         * tell which part of the code is failing at a glance.
+         */
+        it('should throw an error if summing non-Number elements', function () {
+          var b = [ 1, '2', 3 ];
+  
+          (function () {
+            hw1.arrayMethods.sum(b);
+          }).should.throw();
+        });
+  
+        it('should remove an element', function () {
+          var b = hw1.arrayMethods.remove(a, 2);
+  
+          b.should.be.an.Array;
+          b.indexOf(2).should.equal(-1);
+        });
+  
+        it('should find duplicates', function () {
+          var b = [ 1, 1, 2, 3, 'abc', 'def', 'abc', a, a, { foo: 'bar' } ]
+            , c = hw1.arrayMethods.findDuplicates(b)
+            , cExpected = [ 1, 'abc', a ];
+  
+          c.should.be.an.Array;
+          c.should.eql(cExpected);
+        });
+      });
+  
+  The above suite shows off some simple usage of our testing libraries of choice.
+  Next, let's examine some more advanced scenarios. Mocha supports async testing
+  simply with a `done` function provided to test and test suite callbacks. Let's
+  say we're testing the server-side `map-storage` module in HW6:
+  
+      var should      = require('should')
+        , mapStorage  = require('../map-storage');
+      
+      // ------------------------------------------------------------------------
+      
+      describe('MapStorage', function () {
+      
+        // Assume a `sampleMapTiles` array exists in scope...
+        describe('#saveMap', function () {
+          it('should save a map to disk', function (done) {
+            var mapParams = {
+              name: 'newMap'
+            , tiles: sampleMapTiles
+            };
+            
+            /*
+             * The `done` method is flexible enough to work as a node-style
+             * callback that takes `err` as its first argument.
+             */
+            mapStorage.saveMap(mapParams, done);
+          });
+        });
+  
+        describe('#getMaps', function () {
+          var maps = [];
+      
+          beforeEach(function (done) {
+            mapStorage.getMaps(function (mapsCollection) {
+              maps = mapsCollection;
+              done();
+            });
+          });
+      
+          /*
+           * Assertions are chainable!
+           */
+          it('should fetch a valid maps collection from disk', function () {
+            maps.should.not.be.empty;
+            maps.should.be.an.Array.and.have.length(4);
+            maps[0].should.be.an.Object.and.have.keys('name', 'tiles');
+            maps[0].name.should.be.a.String;
+            maps[0].tiles.should.be.an.Array;
+          });
+        });
+      
+      });
+  
+  Cool! We've isolated the functional pieces of this node module and tested them
+  separately. But what if we want to write tests for UI code running in the
+  browser? Here, we run into a number of challenges:
+  
+  * Self-initialization (bootstrapping an application) & singletons
+  * Encapsulated logic (IIFEs and the like)
+  * DOM event handlers
+  * XHR requests (AJAX)
+  * Nested callbacks in async code
+  
+  We'll get back to the logistics of testing UI code. First, some ideas about
+  testability:
+  
+  -------------------------------------------------------------------------------
+  
+  ## Is my code testable?
+  
+  Right off the bat, we know there are a few avoidable anti-patterns that make a
+  front end application difficult to test; these should mostly be apparent to you
+  if you' been paying attention to JS code style.
+  
+      <html>
+        <head>
+          <title>Anti-patterns for testable UI code</title>
+          <style type="text/css">
+            .form-msg { display: none; }
+          </style>
+        </head>
+      
+        <body>
+          <h2>Log in</h2>
+          <form id="login" action="#">
+            <input type="text" id="username" name="username" placeholder="Username" />
+            <input type="password" id="password" name="password" placeholder="Password" />
+            <input type="submit" id="submit" value="Submit" />
+      
+            <p class="form-msg error fields-required">
+              Both username and password fields are required.
+            </p>
+      
+            <p class="form-msg success auth">
+              Successfully logged in!
+            </p>
+      
+            <p class="form-msg error auth">
+              The username/password combination is incorrect.
+            </p>
+      
+            <p class="form-msg error server">
+              There was a problem authenticating the user. Please try again later.
+            </p>
+          </form>
+        
+          <!-- scripts -->
+          <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
+          </script>
+      
+          <script type="text/javascript">
+            /*
+             * This code is inaccessible to tests; you can either run all of it or
+             * none of it at once.
+             */
+            $(function () {
+      
+              $('#login').on('submit', function () {
+      
+                // Mixture of form logic and event logic here...
+                event.preventDefault();
+      
+                var username = $('#username').val()
+                  , password = $('#password').val();
+      
+                if (username && password) {
+                  /*
+                    * Requires a functioning back end...
+                    */
+                  $.ajax({
+                    type: 'POST'
+                  , url: '/authenticate_user'
+                  , data: {
+                      username: username
+                    , password: password
+                    }
+                  , success: function (data, status, jqXHR) {
+                      $('.form-msg.success.auth').show();
+                    }
+                  , error: function (jqXHR, textStatus, errorThrown) {
+                      $('.form-msg.error.auth').show();
+                    }
+                  });
+                } else {
+                  $('.form-msg.fields-required').show();
+                }
+              });
+            });
+          </script>
+        </body>
+      </html>
+  
+  ___Problems with the above code:___
+  
+  * Inline JavaScript embedded in an HTML file
+  
+  * Entirely inaccessible code -- no public interfaces exist anywhere
+  
+  * No construction of a class that encapsulates logic to be tested -- in other words, a singleton that allows the results of one test to affect another
+  
+  * Callback nesting pyramid & spaghetti code
+  
+  * Poorly executed DOM event handlers that mix UI & business logic
+  
+  * Inline use of XHR requests
+  
+  * Asynchronous logic without any notification or event system to alert when complete
+  
+  #### Improving testability
+  
+  Much of the advice we've learned so far about client-side application structure
+  and separation of concerns applies here in helping us create more testable code.
+  To create _really_ robust tests, however, we need to go a few steps farther and
+  look into some additional testing libraries.
+  
+  [SinonJS](http://sinonjs.org/) is a library that provides "standalone test
+  spies, stubs, and mocks for JavaScript". There are other libraries that provide
+  these features (Mockery, etc.), but SinonJS appears to be the most popular right
+  now. Its Getting Started page gives you a good idea of the kind of testing power
+  it provides you -- you can verify the behavior of callbacks & their arguments,
+  stub out parts of your application to reduce dynamic behavior, and present mock
+  interfaces for things like AJAX requests.
+  
+  In addition to being full-featured and all-encompassing (there are, of course,
+  also code coverage tools for JS), your tests ought to have good style on their
+  own and be maintainable for future developers.  [This is a good
+  article](http://uxebu.com/blog/2013/01/08/make-tests-read-like-a-book/)
+  with advice on writing more readable tests.
+  
+  -------------------------------------------------------------------------------
+  
+  ## Does my full stack work?
+  
+  In addition to _unit tests_, you will eventually also encounter _integration
+  tests_ and _end-to-end tests_ as a front end developer.
+  
+  __Integration tests__ are meant to verify the joint functionality of two parts
+  of your application stack -- usually, these ensure that system interfaces work
+  as intended.
+  
+  __End-to-end tests__, as the name implies, test the overall functionality of an
+  application from the point of view of an end user. They are also the hardest to
+  write and maintain because they require things like mocking out a database,
+  simulating a headless browser, etc.
+  
+  Libraries:
+
+  * [Intern](http://theintern.io/) is a neat library that automates a full test
+    stack by running a test suite across environments (browser, Node) and across
+    platforms (various browsers). 
+  * [Selenium](http://docs.seleniumhq.org/) allows you to automate browsers,
+    primarily for testing purposes
+  * [PhantomJS](http://phantomjs.org/) lets you run headless browser automation
+    (faster than Selenium)
+
+  -------------------------------------------------------------------------------
+
+  ## JS Workflow
+
+  (Demonstrated in class)
+
+  TDD is just one part of a serious JS developer's workflow. As your projects
+  expand in scope, you'll find the need to run automated build scripts to compile
+  assets & templates. There are some great tools out there to do this job, but
+  unfortunately there's no single standard yet. The one I use these days is called
+  [Gulp](http://gulpjs.com/) -- it's a build system that makes heavy use of
+  _Streams_. It's a step forward from the widely-used
+  [Grunt](http://gruntjs.com/), which doesn't handle chaining & composition of
+  tasks very well. Even more experimental is a tool called
+  [Broccoli](http://www.solitr.com/blog/2014/02/broccoli-first-release/), which
+  aims to provide fast rebuilds and a nicer API for complicated plugin
+  composition.
+  
+  There is a good amount of development being done on all of these libraries
+  (notice that they're all at version `<1.0`). When selecting a build tool, keep
+  in mind that for most people, value is only derived if the community plugins for
+  the tool (CoffeeScript & SASS compilers, test runners, requireJS builders, etc.)
+  are sufficiently populated.
+

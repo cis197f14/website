@@ -1,0 +1,452 @@
+:markdown
+  Server-Side JavaScript
+  ======================
+  
+  Last time, we saw some examples of how a client-side application might talk to
+  a web server to save its state & data.
+  
+      var player = new Player({...});
+  
+      player.fetch();
+  
+      player.set({
+        position: {
+          x: 10,
+          y: 0
+        }
+      });
+  
+      player.save();
+  
+  This last line relies on a custom URL defined in the `Player` model to save the
+  model state to the server. Backbone will internally call `sync` to perform an
+  AJAX request to some API you've specified. This lecture will cover the details
+  of such an API.
+  
+  
+  ## REST
+  
+  Data transfer on the web these days happens almost exclusively through what are
+  known as ___RESTful web services___. REST (Representational State Transfer) is
+  kind of a specification for how these services interface with one another. Some
+  guidelines:
+  
+  #### Use semantic HTTP requests
+  
+  RESTful HTTP requests should do something to or with a resource:
+  
+  * Create a resource with `POST`
+  * Retrieve a resource with `GET`
+  * Update a resource with `PUT`
+  * Delete a resource with `DELETE`
+  
+  Notice the direct mapping to typical CRUD actions for data models.
+  
+  This structure can be abused, however. For example, a service might allow state
+  changes with a `GET` route, which can pose a number of problems:
+  
+      GET /adduser?name=Robert
+  
+  This action is better represented as a `POST` with a JSON payload:
+  
+      POST /users
+  
+      Content-type:application/json
+      {
+        "name": "Robert",
+        "email": "robert@example.com"
+      }
+  
+  #### Be stateless
+  
+  Web servers that keep track of a client's state and respond accordingly are
+  difficult to maintain and pose issues of synchronization, serialization, etc.
+  RESTful web services strive to be stateless; when you interact with an API, you
+  as the client must keep track of your state over multiple requests and use
+  request parameters as necessary.
+  
+  #### Expose directory-like URIs
+  
+  URLs in RESTful web services should have semantic meaning within them. A good
+  example of this occurs in most web publications, where the URL contains much of
+  the metadata relevant to an article:
+  
+      http://www.nytimes.com/2014/03/05/movies/awardsseason/keeping-faith-in-oscar-filmmakers-work-and-sacrifice.html
+  
+  The service's _router_ will have some logic to parse URLS and figure out which
+  models to work with, etc. (similar to Backbone's router).
+  
+      /:year/:month/:day/:section/:subsection/...
+  
+  
+  ------------------------------
+  
+  One of our next goals is to build a RESTful web API ourselves in JavaScript for
+  our client-side applications to interact with. To do this, we'll leverage
+  `node.js`. We've been using it simply as an interpreter for JS code thus far,
+  but today we'll explore its extensive capabilities as a library for building
+  web servers.
+  
+  ## Web services with Node
+  
+  From the node website (emphasis mine):
+  
+  > Node.js is a platform built on Chrome's JavaScript runtime for easily building
+  > fast, scalable network applications. Node.js uses an __event-driven,
+  > non-blocking I/O model__ that makes it lightweight and efficient, perfect for
+  > data-intensive real-time applications that run across distributed devices.
+  
+  Node basically provides two things: an __environment__ and a __library__. In the
+  browser, we had our own special environment to play around with, but loading
+  files was done somewhat crudely with `<script>` tags. Node provides a much more
+  structured module system.
+  
+  When you open up a REPL or a `.js` file, you'll have some variables already
+  defined and available to you -- these are global values in Node such as:
+  
+  * `global` object, or `root`
+  * `process`: provides information and interaction with the currently
+    running Node process
+  * `console`: STDIO functionality in a browser-y way
+  * `setTimeout()`, `setInterval()`, `clearTimeout()`, `clearInterval()` timing
+    functions
+  
+  _Within_ any module (basically any `.js` file run with Node), you also have:
+  
+  * `module`, `module.exports`, `exports`: allow definition of a module & its
+    exports (more on this below)
+  * `require()`: allows importing of other modules
+  * `filename`: path of the currently executing file
+  * `dirname`: directory of the currently executing file
+  
+  Then there are a handful of core modules available on your system when Node is
+  installed, but you'll have to `require` them individually to gain access to
+  them. A few popular ones include:
+  
+  * `fs` (File System)
+  * `http`
+  * `stream`
+  * `querystring`
+  * `url`
+  * `child_process`
+  * `events`
+  
+  ### Modules
+  
+  Node follows the CommonJS module system; the easiest way to include modules from
+  separate files is through use of the `require` function. In a nutshell, it
+  parses another script and returns the `exports` object.
+  
+      var fs = require('fs');
+  
+      console.log(fs);   // { Stats: [Function], exists: [Function], ...}
+  
+  To define your own module, you might have something like this in a JS file:
+  
+      console.log("evaluating example.js");
+  
+      var privateFn = function () {
+        console.log("invisible");
+      };
+  
+      exports.message = "hi";
+  
+      exports.say = function () {
+        console.log(exports.message);
+      }
+  
+  And its import would look like this (note the `./` filepath syntax):
+  
+      var example = require('./example');
+      console.log(example);       // { message: 'hi', say: [Function] }
+  
+  You don't have to include the `.js` file extension; `require` will figure it out
+  and do the right thing.
+  
+  _Note_: if you re-require an already-loaded file, Node will use its module cache
+  instead of reloading the file.
+  
+  You can export a function instead, if you'd like:
+  
+      // example2.js
+      module.exports = function () {
+        console.log('hello');
+      }
+  
+      // Node REPL
+      > require('./example2')();    // 'hello'
+  
+  _Note_: we couldn't simply define `exports = ...` because this would have
+  created a new global variable (however,
+  ['strict mode'](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions_and_function_scope/Strict_mode)
+  would likely guard against this).
+  
+  ### Node Package Manager
+  
+  Soon, you'll want to use packages written by the Node community. To get these
+  on to your computer, you'll use the Node Package Manager, or `npm`. It consists
+  of an online repository of published open-source projects and a command-line
+  utility (bundled with every Node installation) to manage packages, versions,
+  etc. on your system. Package installation is very simple; here's how you'd
+  install the `async` package:
+  
+      $ npm install async
+  
+  If you install a package locally like this, it gets put in a `node_modules`
+  folder in the current directory. You can also install a package globally; its
+  main executable (if any) will hopefully get sym-linked to your `PATH` and you
+  can use it anywhere:
+  
+      $ npm install -g coffee-script
+  
+      $ coffee -c foo.coffee -o ./build/
+  
+  The [online npm registry](https://www.npmjs.org/) contains information about
+  all published packages.
+  
+  Finally, most node projects will include a file called `package.json` at their
+  root, which specifies metadata about the package and allows you to declaratively
+  list dependencies. For example, here's a portion of the `package.json` for the
+  Express framework:
+  
+      {
+        "name":         "express",
+        "description":  "Sinatra inspired web development framework",
+        "version":      "4.0.0-rc2",
+        "author": {
+          "name":       "TJ Holowaychuk",
+          "email":      "tj@vision-media.ca"
+        },
+        "contributors": [ ...  ],
+        "dependencies": {
+          "accepts":            "1.0.0",
+          "type-is":            "1.0.0",
+          "range-parser":       "1.0.0",
+          "cookie":             "0.1.0",
+          "buffer-crc32":       "0.2.1",
+          "fresh":              "0.2.2",
+          "methods":            "0.1.0",
+          "send":               "0.2.0",
+          "cookie-signature":   "1.0.3",
+          "merge-descriptors":  "0.0.2",
+          "utils-merge":        "1.0.0",
+          "escape-html":        "1.0.1",
+          "qs":                 "0.6.6",
+          "debug":              ">= 0.7.3 < 1"
+        },
+        "devDependencies": {
+          "ejs":                "~0.8.4",
+          "mocha":              "~1.15.1",
+          "jade":               "~0.30.0",
+          "hjs":                "~0.0.6",
+          "stylus":             "~0.40.0",
+          "should":             "~2.1.1",
+          "connect-redis":      "~1.4.5",
+          "marked":             "0.2.10",
+          "supertest":          "~0.8.1",
+          "body-parser":        "1.0.0",
+          "cookie-parser":      "1.0.1",
+          "static-favicon":     "1.0.0",
+          "express-session":    "1.0.1",
+          "morgan":             "1.0.0"
+        },
+        "keywords": [
+          "express", "framework", "sinatra", "web",
+          "rest", "restful", "router", "app", "api"
+        ],
+        "repository": {
+          "type":       "git",
+          "url":        "git://github.com/visionmedia/express"
+        },
+        "scripts": {
+          "prepublish": "npm prune",
+          "test":       "make test"
+        },
+        "engines": {
+          "node":       ">= 0.8.0"
+        },
+        "license":      "MIT",
+  
+        ...
+      }
+  
+  Notice that you can separate project dependencies by development and production.
+  To automatically install local packages with a `package.json` specified like
+  this, you can simply run `npm install` in the project directory. More
+  information about this file is available
+  [here](https://www.npmjs.org/doc/json.html).
+  
+  ------------------------------
+  
+  ## Asynchronous Programming
+  
+  Node is a framework that emphasizes asynchronous programming from the ground up
+  (in contrast to other web frameworks). There are often two functions to do the
+  same thing; as a general rule of thumb, you should avoid the _synchronous_ ones
+  and instead use the _asynchronous_ versions.
+  
+  Let's look at an example of reading in a file:
+  
+      var fs = require('fs');
+  
+      // async
+      // ----------------------------------------
+  
+      fs.readFile('example.file', 'utf8', function (err, data) {
+        if (err) {
+          return console.log(err);
+        }
+        console.log(data);
+      });
+  
+  
+      // sync
+      // ----------------------------------------
+  
+      var data = fs.readFileSync('example.file','utf8');
+      console.log(data);
+  
+  At first, it seems like the synchronous code is simpler and more concise.
+  However, the async code is complicated for a reason. When you invoke
+  `fs.readFileSync`, the node process will sit there waiting for the OS to read
+  a file before continuing in the script. On the other hand, `fs.readFile` will
+  ask the OS to start a process to read the file and listen for the OS event
+  indicating that it is done reading the file, at which point the callback we
+  pass into `readFile` here will be run. In the meantime (let's say you're reading
+  a large file), your node process can continue on to other things in the script.
+  The same kind of logic could be applied to expensive database queries.
+  
+  You may have to adjust your mental model a bit and have to think about
+  synchronization issues, but overall the benefits of async code contribute to
+  some of Node's speed as a web development library; you may realize its
+  advantages in the long run.
+  
+  _Note about "callbacks"_: callbacks are the term we generally use to refer to
+  the last argument passed to an async function; they are also functions
+  themselves. It's kind of like saying "do this with some parameters, and then
+  when you're done, do this other thing." Node generally has a convention for its
+  callback functions that makes it so an `error` object is typically passed as the
+  first argument to a callback (you can see this is the case in the above
+  `fs.readFile`).
+  
+  One more relevant part of async programming in Node is `EventEmitter`. This is
+  an interface used when there are multiple stages to a task that a client might
+  want to be notified about. For example, you might need to parse multi-part form
+  data or read in a large file with chunks at a time (using `Stream`s). For more
+  information, see the
+  [`EventEmitter` docs](http://nodejs.org/api/events.html#events_class_events_eventemitter).
+  
+  ___One "gotcha" of async___: a common mistake might be to write code like this:
+  
+      for (var i = 0; i < 5; i++) {
+        setTimeout(function () {
+          console.log(i);
+        }, i);
+      }
+  
+  You'd get an unexpected output like the following:
+  
+      5
+      5
+      5
+      5
+      5
+  
+  __Prompt__: why does this occur?
+  
+  __Answer__: `setTimeout` is passed a closure which contains a reference to the
+  `for` loop's `i`. When that closure finally executes, `i` has already been
+  incremented all the way to `5`.
+  
+  You can accomplish the intended functionality like this:
+  
+      for (var i = 0; i < 5; i++) {
+        (function(i) {
+          setTimeout(function () {
+            console.log(i);
+          }, i);
+        })(i);
+      }
+  
+  ------------------------------
+  
+  ## A simple web server with Node built-ins
+  
+  Now that we have somewhat of a handle on the Node environment and ecosystem, we
+  can jump into writing a RESTful web server. The basic parts we need to get
+  working are as follows:
+  
+  * __Listen for connections__ on a local port
+  * __Parse URLs__ for query strings and other params
+  * __Route URLs__ to relevant request handlers 
+  * __Parse request data / payloads__
+  * __Construct responses__ to send back to clients
+  
+  To do any of this, we have to start with the `http` package. This is what the
+  most basic web server looks like in Node:
+  
+      // server.js
+      var http = require('http');
+  
+      var requestHandler = function (req, res) {
+        console.log('Request received');
+  
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.write('Hello World.\n');
+  
+        res.end();
+      };
+  
+      var server = http.createServer(requestHandler);
+  
+      server.listen(1337, '127.0.0.1');
+      console.log('Server running at http://127.0.0.1:1337/');
+  
+  Try running this code as a file -- when you do so, the process will hang,
+  simply waiting for connections. If you open your browser to `localhost:1337`,
+  however, you ought to get back a `'Hello World'` string!
+  
+  Even though the `listen` function is __blocking__, this is still an instance of
+  _asynchronous programming_. An HTTP server is constructed with a request handler
+  function passed in; this function is invoked every time a client hits the
+  port(s) which the server is listening on. The work is done _later_, not
+  _immediately_.
+  
+  
+  
+  _Aside_: For completeness' sake, here's how you would go about creating and
+  invoking an HTTP request in Node (in this case, a `POST` request).
+  
+      var options = {
+        host: 'localhost',
+        path: '/',
+        port: '1337',
+        method: 'POST'
+      };
+  
+      // Note: working with an EventEmitter
+      var callback = function(response) {
+        var str = ''
+  
+        response.on('data', function (chunk) {
+          str += chunk;
+        });
+  
+        response.on('end', function () {
+          console.log(str);
+        });
+      }
+  
+      var req = http.request(options, callback);
+  
+      req.write("hello world!");
+      req.end();
+  
+  ------------------------------
+  
+  __References__:
+  
+  * [Backbone Fundamentals](http://addyosmani.github.io/backbone-fundamentals/#creating-the-back-end)
+  * [Nodejitsu Articles](http://docs.nodejitsu.com/articles)
+  
+  

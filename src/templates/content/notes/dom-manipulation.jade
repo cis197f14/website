@@ -1,0 +1,343 @@
+:markdown
+  DOM Manipulation
+  ================
+  
+  ## DOM review
+  
+  The `document` object gives us ways of accessing and changing the DOM of the
+  current web page.
+  
+  __General strategy for DOM manipulation__:
+  
+  1. Find a DOM node using an access method and store it into a variable.
+  2. Manipulate the DOM node by changing its attributes, styles, inner HTML, or
+     appending new nodes to it.
+  
+  Basic access methods: `getElementById`, `getElementsByTagName`
+  HTML5 access methods: `getElementsByClassName`, `querySelector`
+  
+  __Attributes__ are attached directly to the DOM element object; you can also use
+  a getter / setter.
+  
+      var img = document.getElementById('lolcat');
+  
+      var oldSrc = img.getAttribute('src');
+      img.setAttribute('src', 'http://placekitten.com/100/500');
+  
+      img.src = oldSrc;
+  
+  __Styles__ are applied with the `style` object property on nodes:
+  
+      img.style.padding = '10px';
+  
+  __Changing content__ is possible with the `.innerHtml` property on nodes:
+  
+      var photoContainer = document.getElementById('#photo-container');
+  
+      photoContainer.innerHtml = "Here's the photo!";
+  
+  __Creating nodes__ is possible with document methods:
+  
+      var photo = document.creatElement('img');
+      photo.src = 'http://placekitten.com/100/500';
+  
+      photoContainer.appendChild(photo);
+  
+  These are the basics of working with the DOM. The rest of the lecture will build
+  on these techniques and introduce _browser events_.
+  
+  --------------------
+  
+  ## Chrome DevTools
+  
+  Before we move on, though, we need to upgrade our toolkit for front end
+  development. You all have a pretty powerful set of tools to inspect, debug, and
+  profile web pages built into your browsers already – today I'll demonstrate the
+  tools that ship in the Chrome browser (in-class demo).
+  
+  All of this applies to Firefox, Safari, and IE as well (at least their modern
+  versions), as they have similar built-in dev tooling.
+  
+  For a web tutorial, refer to Google's
+  [DevTools docs](https://developers.google.com/chrome-developer-tools/).
+  
+  --------------------
+  
+  So far in this course we've been programming in vanilla JavaScript; that is, we
+  haven't really introduced any dependencies to our source code.
+  
+  
+  ## What is jQuery?
+  
+  It's a [JavaScript library](http://jquery.com/). The most widely-used one ever.
+  Here's why it's cool:
+  
+  * Optimized, abstracted DOM manipulation
+  * Intuitive API and method syntax
+  * Expressive selector syntax (driven by CSS selectors)
+  * Bearable syntax for web requests
+  
+  _It'll make your life a whole lot easier_.
+  
+  Let's look at a few of the things jQuery is useful for.
+  
+  ### Selecting elements
+  
+  jQuery uses Sizzle, which is a CSS selector engine written in JavaScript.
+  That means that you can select DOM elements in your JS source the same way
+  you're selecting them to write CSS. Here are some examples:
+  
+      // ID
+      // ----------------------------------------------------------
+      var myEl  = document.getElementById('myEl')
+        , $myEl = $('#myEl');
+  
+      // Tag name
+      // ----------------------------------------------------------
+      var myTable   = document.getElementsByTagName('table')
+        , $myTable  = $('table');
+  
+      // Descendant of ID
+      // ----------------------------------------------------------
+      var lessons   = document.getElementById('content').getElementsByClassName('lesson')
+        , $lessons  = $('#content lesson');
+  
+      // Every other node
+      // ----------------------------------------------------------
+      var inputs = document.getElementsByTagName('input')
+        , oddInputs = [];
+  
+      for (var i = 1, l = inputs.length; i < l; i += 2) {
+        oddInputs.push(inputs[i]);
+      }
+  
+      var $oddInputs = $('input:odd');
+  
+  You can see here that jQuery allows much more expressive and elegant selection
+  functionality than that which is exposed by the DOM API. However, take caution
+  – the Sizzle selector API hides some underlying performance assumptions you can
+  make about your selection code. It's sort of a _leaky abstraction_, one
+  which requires you to be knowledgeable about the lower-level functionality in
+  order to write good, performant code.
+  
+  If you take a look at how the [style system matches rules](https://developer.mozilla.org/en-US/docs/Web/Guide/CSS/Writing_efficient_CSS#How_the_Style_System_Matches_Rules)
+  and similarly, how [Sizzle selectors are evaluated](http://www.sitecrafting.com/blog/sizzle-jquery-selector-pitfalls),
+  you'll start to notice some pitfalls. Most of these apply to selectors in your
+  CSS as well.
+  
+  The key to writing fast jQuery selectors is understanding which native functions
+  the library can leverage (most importantly, `document.getElementById`,
+  `document.getElementsByTagName`, and `element.getElementsByTagName`).
+  Without these, jQuery must rely on a large DOM traversal loop that checks a
+  large number of elements.
+  
+  * __Don't qualify ID selectors__. There's simply no advantage to doing this
+    other than readability purposes (and if your ID isn't specific enough to be
+    readable, consider revising that name).
+  
+        $('.content #lesson1');     // BAD
+        $('.lesson#lesson1');       // BAD
+  
+        $('#lesson1');              // GOOD
+  
+  * __Be careful with raw pseudo selectors__. While pseudo selectors are very
+    powerful, remember that they're not supported natively and if you don't limit
+    your DOM search, it can be a slow lookup.
+  
+        $(':input');                  // BAD
+        $(':radio.show-more');        // BAD
+  
+        $('#myForm :input');          // OK
+        $('input:radio.show-more');   // OK
+  
+        $('input, textarea, select'); // GOOD (but verbose...)
+  
+  * __Class names are slow in IE__. Keep in mind that all modern browsers except
+    IE have `document.getElementsByClassName` built in, so it will be a slower
+    lookup there. But then I suppose it's an issue of how much you care about your
+    IE users...
+  
+  To check the compatibility of DOM API methods like
+  `document.getElementsByClassName` and `document.querySelectorAll` (which tries
+  to consolidate selection in the same fashion as Sizzle), refer to the
+  compatibility table at the bottom of a Mozilla Developer Network DOM reference
+  page for that method.
+  
+  
+  __One more thing__: keep in mind that when you select something with jQuery, it
+  gets wrapped into a _jQuery object instance_ containing all\* the library's
+  functionality. Think this has a greater runtime cost than using the DOM API? You
+  bet it does! So you'll want to avoid recurring selectors:
+  
+      $('#myDiv').fadeout(function () {
+        $('#myDiv').css('color', 'red');
+        $('#myDiv').fadein();
+      });
+  
+  ... is better written as ...
+  
+      var $elem = $('#elem_id');
+      $elem.fadeout(function () {
+        $elem.css('color', 'red').fadein();
+      });
+  
+  In this example you also see an example jQuery's chaining syntax, which makes
+  for a nice-to-use API.
+  
+  
+  \* _Well, not exactly all the functionality -- there are some global methods
+  & constructors exposed on the jQuery object itself, like `$.Deferred`, etc._
+  
+  
+  ### Manipulating elements
+  
+  Once you have your target element selected, what can you do with it?
+  I won't go over all the methods available to jQuery object instances (see the
+  [docs](http://api.jquery.com/) for that), but it suffices to say that you have
+  a lot of DOM manipulation power once you select an element with jQuery.
+  
+      var $myDiv = $('#myDiv')
+        , $otherDiv = $('.other').clone();
+  
+      $myDiv.addClass('active');
+  
+      $myDiv.after('here comes another...');
+  
+      $myDiv.append($otherDiv);
+  
+      // Prepend numbers to the children of a node
+      $myDiv.children().forEach(function (child, i) {
+        $(child).before(i + '. ');
+      });
+  
+      // Query within a node subtree with CSS selector syntax
+      $myDiv.find('a').each(function (i, anchor) {
+        // Keep in mind that in args  ^ index is first!
+  
+        $a = $(anchor);
+  
+        // Print contents, then clear them
+        console.log($a.text());
+        $a.empty();
+      });
+  
+      var $inputs = $myDiv.find('input')
+      $inputs.attr('username');
+  
+      if (!$myDiv.next()) {
+        console.log('#myDiv is the last child of its parent');
+      }
+  
+      $myDiv.fadeOut(500);
+      $myDiv.fadeIn(500);
+  
+      // Remove from DOM
+      $myDiv.remove();
+  
+  As we saw above, we can chain some of these methods:
+  
+      $myDiv.addClass('active').append($otherDiv);
+  
+      $mydiv.find('inputs').attr('username');
+  
+      $myDiv.fadeOut(500).fadeIn(500);
+  
+  This is possible because many jQuery methods return `this`, a self-referential
+  pointer to the jQuery object instance being manipulated.
+  
+      $.fn.empty = function () {
+        var elem, i = 0;
+  
+        for (; (elem = this[i]) != null; i++) {
+          elem.innerHTML = '';
+        }
+  
+        return this;
+      };
+  
+  --------------------
+  
+  ## "Things I Learned from the jQuery Source"
+  
+  _See the screencast [here](http://www.paulirish.com/2010/10-things-i-learned-from-the-jquery-source/)_.
+  _Browser the source [here](http://www.keyframesandcode.com/resources/javascript/deconstructed/jquery/)_.
+  
+  __Undefined__
+  
+  To ensure a valid `undefined` keyword, jQuery and other libraries do something
+  like this in their IIFE:
+  
+      (function (window, document, undefined) {
+        ...
+      })(this, document);
+  
+  __Animation__
+  
+  For animations: `$.delay()` only works if there's an animation queue already
+  there, so this doesn't work:
+  
+      $(elem).delay(2000).fadeOut()
+  
+  You can do one of the following instead:
+  
+      $(elem).fadeIn().delay(2000).fadeOut()
+  
+      $(elem).queue(function () {
+        this.delay(2000).fadeOut()
+      });
+  
+  __Browser Support__
+  
+  `$.support` is the result of a bunch of tests on the current DOM to notify you
+  of browser bugs, unsupported things, etc. Also use `$.browser` similarly.
+  
+  
+  __Stylish things__
+  
+  When you're trying to assign a variable, you can do sometimes elegantly affect
+  some state as well:
+  
+      var head = document.getElementsByTagName('head')[0];
+  
+      var base = document.getElementsByTagName('base')[0] || (function () {
+        return head.insertBefore(d.createElement('base'), head.firstChild);
+      })();
+  
+  Similarly, nested ternary operators let you be concise in assignment:
+  
+      if (data === 'true') {
+        data = true;
+      } else if (data === 'false') {
+        data = false;
+      } else if (data === 'null') {
+        data = null;
+      } else if (!jQuery.isNaN(data)) {
+        data = parseFloat(data);
+      }
+
+      // ^ above can be rewritten as:
+
+      data = data === 'true' ? true :
+        data === 'false' ? false :
+        data === 'null' ? null :
+        !jQuery.isNaN(data) ? parseFloat(data) :
+        data;
+  
+  One last thing...
+  
+      jQuery.fn === jQuery.prototype
+  
+  You'll see jQuery functions and plugins being defined on `jQuery.fn` (and it
+  might show up in stack traces). It's just a prototype object (but it doesn't
+  correspond to the pseudo-classes we've been talking about).
+  
+  --------------------------
+
+  [Browser events &rarr;](#browser-events)
+  
+  __References__:
+  
+  * _Eloquent JS_
+  * _10 Things I Learned from the jQuery Source_ (Paul Irish)
+  * Pamela Fox's _[JS Teaching Materials](http://www.teaching-materials.org/javascript/)_
+    

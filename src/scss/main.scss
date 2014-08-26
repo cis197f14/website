@@ -1,0 +1,291 @@
+
+
+// Variables
+// ---------------------------------------------------------------------------
+$grayDark: #231f20;
+$grayLight: #CCC;
+
+$blueDark: rgba(5, 40, 80, 1.0);
+$blueDarker: darken($blueDark, 10%);
+$blue: lighten($blueDark, 10%);
+
+$redDark: #B53838;
+$red: lighten($redDark, 10%);
+$redLight: lighten($redDark, 20%);
+
+$yellowLight: #f8eec7;
+$yellowDark: #5C4C11;
+
+$borderColor: $blueDark;
+
+// Mixins
+// ---------------------------------------------------------------------------
+@mixin centered {
+  display: block;
+  margin: 0 auto;
+}
+.centered { @include centered; }
+
+@mixin background-size($size) {
+  -webkit-background-size: $size;
+     -moz-background-size: $size;
+          background-size: $size;
+}
+
+@mixin border-radius ($radius) {
+  -webkit-border-radius: $radius;
+     -moz-border-radius: $radius;
+          border-radius: $radius;
+}
+
+@mixin opacity($opacity) {
+  -webkit-opacity: $opacity;
+     -moz-opacity: $opacity;
+          opacity: $opacity;
+}
+
+@mixin transition($transition) {
+  -webkit-transition: $transition;
+     -moz-transition: $transition;
+          transition: $transition;
+}
+
+@mixin box-sizing($sizing) {
+  -webkit-box-sizing: $sizing;
+     -moz-box-sizing: $sizing;
+          box-sizing: $sizing;
+}
+
+@mixin subtle-shadow() {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+// Typography
+// ---------------------------------------------------------------------------
+$contentFont:   'Source Sans Pro';
+$headingFont:   'Montserrat';
+$monospaceFont: 'Inconsolata';
+
+$fontSizeRegular:   18px;
+$fontSizeLarge:     24px;
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $headingFont;
+}
+
+code, pre {
+  font-family: $monospaceFont;
+}
+
+pre {
+  margin: 0;
+  padding: 0.5em;
+  border-radius: 3px;
+  background: $grayDark;
+  color: white;
+}
+
+:not(pre) > code[class*="language-"] {
+  padding: 3px 4px;
+  border-radius: 2px;
+}
+
+a:link {
+  color: $blue;
+  text-decoration: none;
+  &:hover   {
+    color: $blueDark;
+    text-decoration: underline;
+  }
+  &:visited { color: $blueDarker; }
+}
+
+// Globals
+// ---------------------------------------------------------------------------
+* {
+  @include box-sizing(border-box);
+}
+
+ul, ol {
+  padding: 0 0 0 25px;
+
+  &.no-style {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+html, body {
+  height: 100%;
+}
+
+body, input, .pure-g-r [class *="pure-u"] {
+  font-family: $contentFont;
+  font-size: $fontSizeRegular;
+  color: black;
+}
+
+input {
+  outline: none;
+}
+
+input {
+  background: rgba(255, 255, 255, 0.2);
+  border: solid 2px white;
+  color: white;
+  padding: 0.2em 0.8em;
+  margin: 0;
+  @include border-radius(3px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  &:focus {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+table {
+  $border: dotted 1px $grayLight;
+
+  thead {
+    border-top: $border;
+    font-weight: bold;
+  }
+
+  tr {
+    border-top: $border;
+
+    &:last-child {
+      border-bottom: $border;
+    }
+  }
+
+  td {
+    padding: 0.4em;
+    border-left: $border;
+
+    &:last-child {
+      border-right: $border;
+    }
+  }
+}
+
+blockquote {
+  font-style: italic;
+  font-size: 1.2em;
+}
+
+.hidden { display: none; }
+.clear { clear: both; }
+
+// Main styles
+// ---------------------------------------------------------------------------
+
+#logo {
+  display: block;
+  width: 120px;
+  margin-left: -10px;
+}
+
+.pure-menu {
+  position: fixed;
+
+  a:hover {
+    text-decoration: none;
+  }
+
+  &.pure-menu-open {
+    width: auto;
+    height: 100%;
+    margin-right: 1em;
+    border: none;
+    border-right: solid 1px $grayLight;
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .sections {
+    min-width: 160px;
+
+    li {
+      a:hover {
+        background: transparent;
+        &:after {
+          content: "\2192";
+          float: right;
+        }
+      }
+      &.active a, &.active a:hover {
+        background: #EEE;
+      }
+    }
+  }
+
+  small {
+    display: block;
+    padding: 20px;
+    color: #777;
+  }
+
+  .pure-menu-heading {
+    h2 {
+      margin: 5px 0;
+    }
+
+    a {
+      padding: 0;
+      text-transform: none;
+    }
+  }
+}
+
+.main-content {
+  section {
+    display: none;
+    margin-left: 200px;
+
+    &.active {
+      display: block;
+    }
+  }
+}
+
+
+// Content styling
+// ---------------------------------------------------------------------------
+.notes {
+  img {
+    display: block;
+  }
+}
+
+// Screen size breakpoints
+// ---------------------------------------------------------------------------
+@media(max-width: 888px) {
+  #logo {
+    display: none;
+  }
+
+  .pure-menu {
+    position: relative;
+
+    &.pure-menu-open {
+      width: 100%;
+      margin-right: 0;
+    }
+
+    .sections li a:hover {
+      &:after {
+        content: "\2193";
+      }
+    }
+  }
+
+  .main-content section {
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border-top: dotted 1px $borderColor;
+  }
+}

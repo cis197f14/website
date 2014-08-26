@@ -1,0 +1,551 @@
+:markdown
+  Scaling Client-Side Applications
+  ================================
+  
+  ### Module systems in the browser
+  
+  By now, we've experienced the benefits that module systems can provide in
+  JavaScript. Thing is, these only exist in platforms like Node.js, where
+  standards are loose (or nonexistent).
+  Browser implementations of JavaScript, which follow the ECMAScript standard,
+  don't have built-in support for modules yet (it's coming soon in ES6, though).
+  Luckily, the JS community has come up with some good workarounds. The most
+  popular is the [require.js library](http://requirejs.org/), which is an
+  implementation of the __Asynchronous Module Definition (AMD)__ standard.
+  
+  With __requireJS__ (and in particular, its optional CommonJS syntax), you can
+  write client-side JS modules much like you would write node modules (the
+  functions `define` and `require` are globally exposed by requireJS).
+  
+      // scripts/main.js
+      define(function (require, exports, module) {
+  
+        var $ = require('jquery'),
+            _ = require('underscore');
+  
+        function init () {
+          // do stuff
+        }
+  
+        exports.init = init;
+  
+      });
+  
+  This script would be loaded onto the page not with a `<script>` tag, but by the
+  requireJS asynchronous loader. Below, the `data-main` attribute tells requireJS
+  to load `scripts/main.js` after `require.js` loads.
+  
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Sample RequireJS Project</title>
+        </head>
+        <body>
+          <!-- ... -->
+  
+          <!-- load scripts -->
+          <script data-main="scripts/main" src="scripts/require.js"></script>
+        </body>
+      </html>
+  
+  _Note_: to load jQuery and Underscore with the exact syntax as shown above, an
+  additional shim would be needed to let requireJS know where those libraries live
+  in the application.
+  
+  For a more thorough walkthrough on getting requireJS set up, refer to the
+  [docs](http://requirejs.org/docs/start.html).
+  
+  ------------------------------------------------------------------------------
+  
+  ### Backbone Events
+  
+  I feel it's necessary at this point to do a deeper review of Backbone Events.
+  While you may have not felt the need to use them very heavily in your homework
+  thus far, they become very useful in larger applications for control
+  architecture.
+  
+  Fundamentally, Events are an inversion of control. Rather than reaching
+  a statement in code and calling another function...
+  
+      function doStuff () {
+        // ...
+        doSomeOtherStuff();
+        // ...
+      }
+  
+  you tell some part (or all) of your application that an "event" occurred:
+  
+      _.extend(app, Backbone.Events);
+  
+      function doStuff () {
+        // ...
+        app.trigger('stuff-happened');
+        // ...
+      }
+  
+      app.on('stuff-happened', doSomeOtherStuff);
+  
+  Notice how `doStuff` now doesn't have to know about what kinds of external
+  things should happen in the case of the `'stuff-happened'` event. As long as the
+  modules in your app can agree on a common events "interface", you can use a
+  system like this to enable separation of concerns. Indeed, this is one of the
+  more powerful features of Backbone since it allows your business logic to be
+  completely unaware of how the UI works. _Events are leveraged in all
+  consequential front-end applications because they allow you to write modular,
+  reactive code._
+  
+  `Backbone.Events` is mixed into almost all other Backbone classes, including:
+  
+  * `Backbone`
+  * `Backbone.Model`
+  * `Backbone.Collection`
+  * `Backbone.View`
+  * `Backbone.Router`
+  * `Backbone.History`
+  
+  Remember that events can also pass along data to their handlers simply as
+  a second argument to `trigger`.
+  
+  _Note_: since `Backbone` is globally available in your app, you can use it as
+  a simple universal event bus or pub/sub system!
+  
+      function doStuff () {
+        Backbone.trigger('stuff-happened', {
+          how_much: 'lots of'
+        });
+      }
+  
+      Backbone.on('stuff-happened', function (params) {
+        var how_much = params.how_much || 'some';
+        console.log('yo, ' + how_much + ' stuff happened!');
+      });
+  
+  Of course you are able to _unsubscribe_ from events using the `off` method (and
+  you can also remove a _specific_ event handler by passing that handler function
+  as a second argument).
+  
+      Backbone.off('stuff-happened');
+  
+      Backbone.off('all', someUniversalHandler);
+  
+  There's another way for "evented" objects (those with `Backbone.Events` mixed in)
+  to listen to events as well. Consider a situation from the Pokémon game we've
+  been building:
+  
+      builderView.listenTo(builder, 'change:selectedSwatch', function (attrs) {
+        // ...
+      });
+  
+  Subscribe / unsubscribe now become `listenTo` / `stopListening`, and you can see
+  that we can "direct" our listening toward an object.
+  The reasons why you might want to use `listenTo` instead of `on` have to do with
+  memory management and garbage collection.
+  
+  #### View management
+  
+  Typically, to clean up a Backbone view, you simply call `.remove()`, which
+  delegates to jQuery's `.remove`, thereby destroying the DOM element, its data in
+  the DOM, and attached event handlers.
+  
+  If there are multiple views attached to a DOM element, you might instead call
+  `.undelegateEvents()` for just one of them and remove any links to that view in
+  your code (so that it gets garbage collected).
+  
+  Take a look at
+  [`Backbone.View.remove`](http://documentcloud.github.io/backbone/docs/backbone.html#section-128)
+  in the source -- it calls `stopListening()` on itself, which will remove any
+  event listeners you have bound using `.listenTo` or `.on`. __It will not,
+  however, remove any listeners that another object has "directed" towards the
+  view__. Some code to illustrate the point:
+  
+      var myModel = new Backbone.Model({ foo: 'bar' }),
+          myView  = new Backbone.View({ model: myModel });
+  
+      $('body').append(myView.render().$el);
+  
+      myModel.on('change:foo', function (attrs) {
+        myView.render();
+      });
+  
+      myModel.listenTo(myView, 'some-view-event', function (params) {
+        myModel.sync();
+      });
+  
+      myView.remove();
+  
+  _Neither of the event listeners above will be unbound_ when
+  `myView` is removed. This means that `myModel` will retain a reference to
+  `myView` in JavaScript and __the garbage collector won't destroy the view__.
+  This is a __memory leak__ and is considered a __Bad Thing__ in any programming
+  environment.
+  
+  ___Lessons to be learned___: every `on` or `listenTo` in your application should
+  be matched by a corresponding `off` or `stopListening` call to ensure
+  bulletproof memory management. When you need a view to react to a model,
+  recognize the tradeoff between using `model.on` and `view.listenTo`.
+  
+  For more information about view "zombies" that cause memory leaks like this,
+  check out
+  [this article](http://lostechies.com/derickbailey/2011/09/15/zombies-run-managing-page-transitions-in-backbone-apps/).
+  It's from 2011 though, so be wary of changes in Backbone style / syntax that
+  have occurred since then.
+  
+  ------------------------------------------------------------------------------
+  
+  ### Common client-side problems & solutions
+  
+  As we've seen thus far, Backbone is a small library; as such, it doesn't solve
+  all the front end UI programming problems that you might encounter in building
+  complex applications.
+  Many of the common issues you'll deal with will have to do with views and view
+  management. Much is adapted from the [Backbone Fundamentals
+  book](http://addyosmani.github.io/backbone-fundamentals/#common-problems-solutions).
+  
+  #### Create and render sub-views
+  
+  1. The simplest method to create a "sub-view" is through direct DOM-level
+     inheritance:
+  
+          var MyView = Backbone.View.extend({
+            
+            tmpl: _.template($('#my-view-template').html()),
+  
+            initialize: function () {
+              this.subView = new SubView({
+                model: this.model.get('sub-model')
+              });
+            },
+  
+            render: function () {
+              this.$el.empty();
+              this.$el.html(this.tmpl(this.model.toJSON()));
+  
+              this.$el.append(this.subView.$el);
+              this.subView.render();
+            }
+  
+          });
+  
+     Note that by rendering `this.subView` after placing its element in the DOM,
+     we can utilize rendering logic that sizes the sub-view based on the
+     dimensions of another element in the page.
+  
+  2. You might use `setElement` instead here, but that has a few tradeoffs
+     (agnostic to DOM element order, but you can't specify things like tag name,
+     etc.)
+  
+          render: function () {
+            // ...
+            this.subView.setElement('.sub-view-container').render();
+          }
+  
+  3. Here's another solution that can potentially affect performance:
+  
+          var MyView = Backbone.View.extend({
+  
+            // ...
+  
+            initialize: function () {
+              this.render();
+            },
+  
+            render: function () {
+              this.$el.html(template);
+              this.subView = new SubView();
+              this.$el.append(this.subView.$el);
+            }
+  
+          });
+  
+          var SubView = Backbone.View.extend({
+            initialize: function () {
+              this.render();
+            },
+  
+            render: function () {
+              this.$el.html(template);
+            }
+          });
+  
+  Looking at these options, we find that #1 is generally preferred. Sub-views
+  don't have to be re-initialized when the outer view is rendered
+  (re-initializations have the potential to cause memory leaks and issues with
+  existing event bindings). Also, views rendering logic is able to reliably assume
+  that a view's element already exists in the DOM.
+  
+  #### Accessing models in child views
+  
+  Once you start having sub-views as shown above, you may end up needing to create
+  a model hierarchy as well. This wasn't the case in the Pokémon homework, but
+  let's say we had a `Palette` model separate from the `Builder` model.
+  
+      var Builder = Backbone.Model.extend({
+  
+        initialize: function () {
+          this.palette = new Palette();
+          this.palette.parent = this;
+        }
+  
+      });
+  
+  If we maintain a `.parent` model link like this, then `palette` can easily
+  access the `builder` model as necessary.
+  
+      var Palette = Backbone.Model.extend({
+  
+        initialize: function () {
+          this.on('change:selectedSwatch', function (attrs) {
+            this.parent.trigger('selectSwatch', attrs.selectedSwatch);
+          });
+        }
+  
+      });
+  
+  Similarly, we can create a link to parent views.
+  
+      var BuilderView = Backbone.View.extend({
+  
+        initialize: function () {
+          this.paletteView = new PaletteView({
+            model: palette
+          });
+  
+          this.paletteView.parentView = this;
+        },
+  
+        render: function () {
+          // ...
+          this.$el.append(this.paletteView.$el);
+          this.paletteView.render();
+        },
+  
+        // ...
+  
+      });
+  
+      var PaletteView = Backbone.View.extend({
+  
+        events: {
+          'click .swatch': 'onSwatchClick'
+        },
+  
+        initialize: function () {
+          this.listenTo(this.model.parent, 'reset', this.render);
+        },
+  
+        onSwatchClick: function () {
+          this.parentView.notify();
+        },
+  
+        // ...
+  
+      });
+  
+  Keep in mind that this kind of indirection is most times best handled with
+  events (it keeps code modular), but you may come across scenarios where direct
+  hierarchical access to models and views is helpful.
+  
+  #### Refreshing a parent view within a child view
+  
+  Once you have this `parentView` link and come across a point in your application
+  where a sub-view event should trigger a parent-view render, you may be tempted
+  to call
+  
+      this.parentView.render();
+  
+  This will probably work right off the bat. However, if you want inversion of
+  control and more modularity, you'll want to use events.
+  
+      // Parent initialize
+      this.listenTo(this.subView, 'refreshAll', this.render);
+  
+      // Parent removal
+      this.stopListening(this.subView, 'refreshAll');
+  
+  #### Disposing of view hierarchies
+  
+  If you have nested views, it would be nice to be able to simply call a `close`
+  function on the top-level view to be able to dispose of the entire hierarchy.
+  
+      Backbone.View.prototype.close = function () {
+        if (this.onClose) {
+          this.onClose();
+        }
+        this.remove();
+      };
+  
+      var ListView = Backbone.View.extend({
+  
+        tagName: 'ul',
+  
+        initialize: function (params) {
+          this.childViews = params.children || [];
+        },
+  
+        renderChildren: function (itemView) {
+          this.$el.append(itemView.$el);
+          this.childViews.push(itemView.render());
+        },
+  
+        onClose: function () {
+          _(this.childViews).invoke('close');
+        }
+  
+      });
+  
+      var ListItemView = Backbone.View.extend({
+        tagName: 'li',
+  
+        render: function () {
+  
+        }
+      });
+  
+      var myView = new MyView({
+        children: [
+          new ListItemView(),
+          new ListItemView()
+        ]
+      });
+  
+      myView.render();
+      myView.renderChildren();
+      myView.close();
+  
+  #### Working with nested models & collections
+  
+  The fact that Backbone doesn't support nested models / collections nicely out of
+  the box is somewhat of an endorsement for simpler client-side models. However,
+  if you do find yourself with nested data structures, here's how you might
+  build your models. Imagine you are modeling "rooms" inside "buildings" on the
+  client.
+  
+      var Rooms = Backbone.Collection.extend({
+        // ...
+      });
+  
+      var Building = Backbone.Model.extend({
+  
+        initialize: function () {
+          this.rooms = new Rooms();
+          this.rooms.url = '/building/' + this.id + '/rooms';
+          this.rooms.on('reset', this.updateCounts);
+        },
+  
+        // ...
+  
+      });
+  
+      var townHall = new Building();
+  
+      // lazy load the building's rooms
+      townHall.rooms.fetch({
+        reset: true
+      });
+  
+  Note that there are some Backbone plugins, such as
+  [Backbone Relational](https://github.com/PaulUithol/Backbone-relational), which
+  allow you to set up different kinds of relations (much like a relational
+  database) for your models. For example, it relieves the issues around chained
+  model getters like this:
+  
+      this.model.get('player').get('position')....
+  
+  
+  #### Inheritance in Backbone views and models
+  
+  We've been using Backbone inheritance in the form of `Backbone.*.extend` without
+  looking at it too closely. This method (inspired by the `inherits`
+  function in the Google Closure Library) is designed to mimic classical
+  object-oriented inheritance with some prototypical stuff thrown in; there are
+  some nuances you might want to take note of.
+  [Link to its source](http://documentcloud.github.io/backbone/docs/backbone.html#section-190).
+  
+  * Properties and methods are _copied_ from one object to another, not passed by
+    reference.
+  * Instance methods of a child are checked for a `constructor`. If not present,
+    the parent's `constructor` is copied.
+  * A `__super__` property is assigned on the child (this makes it compatible with
+    Coffeescript classes)
+  
+  You are able to simply inherit from other views / models like so:
+  
+      var PlayerView = Backbone.View.extend({
+        initialize: function (params) {
+          console.log('player init');
+          this.row = params.row || 0;
+          this.col = params.col || 0;
+          this.orientation = 'right';
+        }
+      });
+  
+      var PikachuView = PlayerView.extend({
+        initialize: function (params) {
+          PlayerView.prototype.initialize.call(this, params);
+          console.log('pikachu init');
+          this.orientation = 'down';
+        }
+      });
+  
+      var playerView  = new PlayerView(),
+          pikachuView = new PikachuView();
+  
+  Note how it was necessary to explicitly call a parent view's method to
+  re-invoke some functionality if that method was overriden in the child view.
+  This can be cumbersome as our apps scale. Here's a proposed improvement:
+  
+      var PlayerView = function (params) {
+        console.log('player init');
+        this.row = params.row || 0;
+        this.col = params.col || 0;
+        this.orientation = 'right';
+  
+        Backbone.View.apply(this, params);
+      };
+  
+      _.extend(PlayerView.prototype, Backbone.View.prototype, {
+        // all of PlayerView's methods go here
+        orient: function (dir) {
+          this.orientation = dir;
+        }
+      });
+  
+      PlayerView.extend = Backbone.View.extend;
+  
+      var PikachuView = PlayerView.extend({
+        initialize: function (params) {
+          console.log('pikachu init');
+          this.orientation = 'down';
+        }
+      });
+  
+      var pikachuView = new PikachuView();
+      pikachuView.orient('right');
+  
+  Neat! `_.extend` saved us a lot of time and redundant code.
+  
+  
+  ------------------------------------------------------------------------------
+  
+  ### MarionetteJS
+  
+  Marionette is a Backbone extension that provides APIs and functionality for many
+  of the most common situations & architectures in a non-trivial Backbone.js app.
+  For example, it has a notion of nested views and abstractions for view life
+  cycle management. If you write more Backbone apps, you'll find yourself writing
+  the same boilerplate over and over again. Marionette will help you reduce this
+  boilerplate code. Studying its functionality may help you to more easily gain
+  access to the more complex & prescriptive front end frameworks (Ember,
+  AngularJS, etc).
+  
+  [Make your Backbone applications dance!](http://marionettejs.com/)
+  
+  ------------------------------------------------------------------------------
+  
+  #### References
+  
+  * [Backbone Fundamentals](http://addyosmani.github.io/backbone-fundamentals)
+    Events, Common Problems & Solutions
+  * [EloquentJS, Chapter 9](http://eloquentjavascript.net/chapter9.html)
+  * [Speaking JS, Chapter 31](http://speakingjs.com/es5/ch31.html)
+  

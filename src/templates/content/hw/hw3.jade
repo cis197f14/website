@@ -1,0 +1,263 @@
+:markdown
+  Homework 3: Map Building
+  ========================
+  
+  Due _Saturday, February 22 at 9 AM_.
+  
+  Implementation stub available in the
+  [homework repository](https://github.com/cis197s14/hw/blob/master/hw3/).
+  
+  ### Before starting this assignment
+  
+  Review notes about [DOM Manipulation](#dom-manipulation) and
+  [Browser Events](#browser-events). If you are completely new to jQuery, you
+  might want to go through
+  [this tutorial](http://learn.jquery.com/about-jquery/how-jquery-works/)
+  on the jQuery website.
+  
+  ## Building a map builder
+  
+  ![map-builder](build/images/map-builder.png)
+  
+  This project will introduce you some important jQuery concepts while helping you
+  design a map-building application. It will run entirely in the browser; you're
+  going to submit the whole client-side application with HTML, CSS, and JS. It's
+  inspired a lot by Pokémon maps. Here's a general outline of the functionality:
+  
+  1. Pick a swatch from the palette
+  2. Hover over the map canvas to see swatch in context
+  3. Click on the canvas to paint it with a selected swatch
+  
+  To begin, take a look at the provided HTML and CSS files that lay out the map
+  building interface. There are a few files linked to the `index.html` web page -
+  styles in `main.css`, the jQuery library in `lib/js/jquery-1.11.0.js`, and the
+  script that you will produce in this assignment, `map-builder.js`.
+  
+  ___TODO___: Go ahead and create this file with the familiar IIFE skeleton:
+  
+      // map-builder.js
+      (function () {
+        
+      })();
+  
+  There are two main sections of concern in `index.html`: the
+  swatches palette at the top and the map canvas below it. The map swatches are
+  already populated for you and have associated tile images (they show up as
+  background images applied through CSS). A palette swatch looks like this:
+  
+      <li class="swatch water-se"></li>
+  
+  `water-se` is the swatch name; __this will be the same class name applied to map
+  tiles to build up the map__.
+  
+  ___TODO___: Start off by creating a JavaScript class called `MapBuilder` to
+  encapsulate the map builder logic (this will make it easy to convert to a JS
+  plugin later on). Its constructor should be accept two arguments:
+  
+  1. A jQuery element that represents the map-builder container. It should contain
+     a `.palette` element and `.map` element within it. In the provided HTML page,
+     you can immediately see that this corresponds to the `<div id="map-builder">`
+     container in the document body. The constructor should save this provided
+     `$elem` (note the prepended `$` on jQuery variable names) as a property in
+     the `MapBuilder` instance.
+  
+  2. An optional params object with `width` and `height` properties indicating how
+     large the map should be in tile dimensions. When this argument isn't
+     provided, the `MapBuilder` should resort to some reasonable stored defaults.
+  
+  _Note_: For this project, it is likely that all the work done by `MapBuilder`
+  will occur in its constructor (not through any instance methods after
+  construction). Again, we're using the pseudo-class more as a method of
+  organization and encapsulation rather than for more "traditional"
+  object-oriented purposes.
+  
+  
+  ___TODO___: Create an anonymous function at the bottom of `map-builder.js` and
+  bind it to document ready invocation using jQuery's convenient syntax as
+  illustrated at the bottom of the [browser events notes](#browser-events).
+  Invoke the `MapBuilder` constructor in this function appropriately so that it
+  runs after DOM-load.
+  
+  ------------------------------------------------------
+  
+  ## Selecting swatches
+  
+  ![select-swatches](build/images/gifs/select-swatches.gif)
+  
+  The first task will be to have `MapBuilder` keep track of which swatch is
+  currently selected in the palette. Visually (in CSS), we'll represent this with
+  the `'selected'` class on swatches. If the 'grass' swatch is selected, its
+  palette element looks like this:
+  
+      <li class="selected swatch grass"></li>
+  
+  ___TODO___: Write a function on the `MapBuilder` prototype called
+  `_setupPalette` that gets invoked in the builder constructor. This setup
+  function should bind a `click` handler to palette swatches that
+  
+  1. Ensures only one swatch is ever 'selected' (check out jQuery's `.removeClass`
+     and `.addClass` methods)
+  2. Stores the currently selected swatch name in the `MapBuilder` instance.
+     You'll probably want a helper function to extract the swatch name from a DOM
+     element. It will be helpful to get access to the raw DOM element `classList`.
+     For example:
+  
+          $grassSwatch = $('.swatch.grass');  // jQuery element
+  
+          grassSwatch = $grassSwatch.get(0);  // DOM element
+  
+          grassSwatch.classList;      // DOM NodeList, which works like an array
+  
+  __Debugging__: Try logging the swatch name to the console every time the
+  selected swatch changes. You ought to be able to click a bunch of swatches and
+  see this value update to values like `'water-se'`, `'fence-nw'`, `'cave'`, etc.
+  
+  ------------------------------------------------------
+  
+  ## Drawing the map canvas
+  
+  ___TODO___: Next, write another similar setup function for the map canvas. It
+  should generate `<div>`s for the map tiles according to the provided map size
+  dimensions and insert them into the DOM inside the `.map` element. A 2 x 2 map
+  would look like this on the page:
+  
+      <div class="map">
+        <h3>Map Canvas</h3>
+        <div class="row">
+          <div class="tile swatch grass"></div>
+          <div class="tile swatch grass"></div>
+        </div>
+        <div class="row">
+          <div class="tile swatch grass"></div>
+          <div class="tile swatch grass"></div>
+        </div>
+      </div>
+  
+  If you use the same class names as listed here, the styles provided with the
+  assignment should work right off the bat. Otherwise, you'll have to go in and
+  make some CSS edits.
+  
+  In jQuery, it's possible to __generate__ a DOM element by passing an HTML tag
+  string to `$`, like this:
+  
+      var $newDiv = $('<div>');
+  
+      // We can invoke jQuery methods on this new div
+      $newDiv.addClass('swatch');
+  
+  Until you write `$newDiv` into the `document`, however, it only exists in your
+  script. Take a look at jQuery's `.append` method (and related ones) to
+  write elements into the page DOM.
+  
+  _Note_: this layout could have been implemented with a `<table>` (it is, after
+  all, simply a grid), but using `<div>`s allows us to write simpler CSS.
+  
+  ------------------------------------------------------
+  
+  ## Previewing swatches
+  
+  ![preview-swatches](build/images/gifs/preview-swatches.gif)
+  
+  While building our Pokémon level map, it would be nice to preview what a map
+  tile would look like in position on the canvas. There are a few ways you can
+  make this work with classes, some of which don't require edits to the provided
+  CSS file. A map tile simply looks like:
+  
+      <div class="tile swatch grass"></div>
+  
+  So if you swap out `'grass'` for another swatch name, it takes on that swatch's
+  appearance.
+  
+  ___TODO___: On construction, `MapBuilder` should bind event handlers to the
+  newly generated tiles. In particular, we are interested in the `mouseenter` and
+  `mouseout` events on each tile `<div>`. When the mouse hovers over a tile, it
+  should take the appearance of `MapBuilder`'s selected swatch.
+  
+  * `mouseenter`: edit the tile's CSS classes so that it appears to look like the
+    selected swatch
+  
+  * `mouseout`: restore the tile's original "painted-on" swatch appearance with
+    CSS classes
+  
+  Remember that jQuery event handlers have this general form:
+  
+      function onMouseEnter (e) {
+        // An event handler's context gets bound to its target element on the
+        // page. Here, we create a jQuery object handle for the element.
+        var $this = $(this);
+  
+        // do stuff
+      }
+  
+      $myDiv.on('mouseenter', onMouseEnter);
+  
+  _Hint_: If you need to store information on a DOM element, it's common to use
+  a `data-` attribute. You can give this any name; it looks something like this:
+  
+      <li class="swatch grass" data-seq="1"></li>
+  
+  You can then access these attributes in jQuery:
+  
+      var $grass = $('.swatch.grass');
+  
+      $grass.data('seq');       // --> '1'
+      $grass.data('seq', 2);    // updates the 'data-seq' attr
+  
+  ------------------------------------------------------
+  
+  ## Painting swatches
+  
+  Now the fun part! To allow a user to "paint" a swatch (make it stay in place on
+  the map canvas), we'll make them click on a tile. That tile should then take the
+  appearance of the selected swatch.
+  
+  ![paint-swatches](build/images/gifs/paint-swatches.gif)
+  
+  ___TODO___: On construction, `MapBuilder` should bind a `mousedown` event
+  handler to the map tiles. This handler will be similar to `mouseenter`, but
+  you'll have to do something special to ensure that the swatch appearance doesn't
+  revert when the mouse leaves the tile.
+  
+  ___TODO___: In addition, you should implement tile painting by dragging. This
+  can all be done with just the `mousedown` and `mouseenter` events. Think about
+  what should happen to a tile when the mouse enters it AND the mouse button is
+  already clicked.
+  
+  _Hint_: You can access the pressed key or mouse button in an event handler
+  through the event object:
+  
+      var LEFT_MOUSE_BUTTON = 1;
+  
+      $grass.on('mousedown', function (e) {
+        e.which === LEFT_MOUSE_BUTTON;      // --> true
+      });
+  
+  ------------------------------------------------------
+  
+  ### Make cool maps
+  
+  If you build any cool Pokémon maps once you're finished with the assignment,
+  please share them! Post a screenshot to our Piazza forum.
+  
+  ### A playable character (5 pts extra credit)
+  
+  If you're feeling adventurous like Ash Ketchum, you can go on to implement
+  a playable character within this map once it's built. There are image assets
+  available for you to leverage for this task in the folders
+  `hw3/lib/img/tilesets` and `hw3/lib/images/sprites` (image tiles for Pikachu,
+  Ash, etc).
+  
+  ___Extra Credit___: Implement a separate class called `Player` that generates
+  a player on the map when a 'Play' button is clicked on the page. This player can
+  move around with the arrow keys. They should be able to move over terrain but
+  not through obstructions (look at the images folder or `main.css` to see which
+  tiles are terrain and which are obstructions).
+  
+  ------------------------------------------------------
+  
+  ## Debugging
+  
+  Check out the Chrome DevTools docs / tutorials on
+  [JavaScript debugging](https://developers.google.com/chrome-developer-tools/docs/javascript-debugging).
+  
+  
