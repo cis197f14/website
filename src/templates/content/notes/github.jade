@@ -28,7 +28,7 @@
 
   1. Complete the [intro survey](https://docs.google.com/forms/d/1OLTZDuIwhyK6X8lMeuuxRaGJDkmhu1HtAR_4qkTEO3Q/viewform)
     if you haven't already. Once you get an email
-    saying you have been added to the __cis197s14__ organization, you may proceed
+    saying you have been added to the __cis197f14__ organization, you may proceed
     with the next steps.
 
   2. Log onto Github. Change your view to the CIS 197 class context.
@@ -53,7 +53,7 @@
 
           bash-3.2 $ cd ~/Github/cis197/
 
-          bash-3.2 $ git clone https://github.com/cis197s14/hw_cis197bot.git
+          bash-3.2 $ git clone https://github.com/cis197f14/hw_cis197bot.git
           Cloning into 'hw_cis197bot'...
           Username for 'https://github.com': cis197bot
           Password for 'https://cis197bot@github.com':
@@ -71,7 +71,7 @@
     files directly from Github. You'll need to execute the following command
     inside the directory you just cloned:
 
-          git remote add upstream https://github.com/cis197s14/hw.git
+          git remote add upstream https://github.com/cis197f14/hw.git
 
     This added the class repository as a git "remote", which means that you can
     pull changes down from that repository and into your personal repository.
@@ -97,7 +97,37 @@
 
   Great! Now that the setup is done, you can get started on homework.
 
+  ### Homework 0
+
+  The first submission is just to make sure you've set everything up correctly.
+  It's a simple JavaScript Hello World program. For future homeworks, please refer
+  to the next section.
+
+  1. First, create a `hw0` folder and create an empty `hello.js` file in it.
+
+          mkdir hw0 && touch hw0/hello.js
+
+  2. Now, write the Hello World program into the file.
+
+          echo "console.log('Hello world');" > hw0/hello.js
+
+  3. Run the program to make sure it prints 'Hello world'.
+
+          node hw0/hello.js
+
+  4. Now, you need to stage and commit all the 
+    relevant files:
+
+          git add hw0/hello.js && git commit -m "done with hw0"
+
+      Push changes to Github:
+
+          git push origin master
+
+  5. Follow steps 4 and 5 in the next section to submit the Pull Request and finish Homework 0.
+
   ### Working on homework
+
 
   1. First, get any files/folders that were added to the class homework
     repository:

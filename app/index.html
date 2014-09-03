@@ -153,7 +153,7 @@ question.</p>
 <ol>
 <li><p>Complete the <a href="https://docs.google.com/forms/d/1OLTZDuIwhyK6X8lMeuuxRaGJDkmhu1HtAR_4qkTEO3Q/viewform">intro survey</a>
 if you haven&#39;t already. Once you get an email
-saying you have been added to the <strong>cis197s14</strong> organization, you may proceed
+saying you have been added to the <strong>cis197f14</strong> organization, you may proceed
 with the next steps.</p>
 </li>
 <li><p>Log onto Github. Change your view to the CIS 197 class context.
@@ -175,7 +175,7 @@ please take a few minutes to read Section 3 of <a href="http://heather.cs.ucdavi
 </code></pre><p>put together, that all looks like</p>
 <pre><code> bash-3.2 $ cd ~/Github/cis197/
 
- bash-3.2 $ git clone https://github.com/cis197s14/hw_cis197bot.git
+ bash-3.2 $ git clone https://github.com/cis197f14/hw_cis197bot.git
  Cloning into &#39;hw_cis197bot&#39;...
  Username for &#39;https://github.com&#39;: cis197bot
  Password for &#39;https://cis197bot@github.com&#39;:
@@ -190,7 +190,7 @@ that directory:</p>
 personal homework repository. This will allow you to pull required homework
 files directly from Github. You&#39;ll need to execute the following command
 inside the directory you just cloned:</p>
-<pre><code> git remote add upstream https://github.com/cis197s14/hw.git
+<pre><code> git remote add upstream https://github.com/cis197f14/hw.git
 </code></pre><p>This added the class repository as a git &quot;remote&quot;, which means that you can
 pull changes down from that repository and into your personal repository.
 Let&#39;s do that now. Run the command:</p>
@@ -207,6 +207,29 @@ submitted. First, create a new branch called &quot;submit&quot;:</p>
 </code></pre></li>
 </ol>
 <p>Great! Now that the setup is done, you can get started on homework.</p>
+<h3 id="homework-0">Homework 0</h3>
+<p>The first submission is just to make sure you&#39;ve set everything up correctly.
+It&#39;s a simple JavaScript Hello World program. For future homeworks, please refer
+to the next section.</p>
+<ol>
+<li><p>First, create a <code>hw0</code> folder and create an empty <code>hello.js</code> file in it.</p>
+<pre><code> mkdir hw0 &amp;&amp; touch hw0/hello.js
+</code></pre></li>
+<li><p>Now, write the Hello World program into the file.</p>
+<pre><code> echo &quot;console.log(&#39;Hello world&#39;);&quot; &gt; hw0/hello.js
+</code></pre></li>
+<li><p>Run the program to make sure it prints &#39;Hello world&#39;.</p>
+<pre><code> node hw0/hello.js
+</code></pre></li>
+<li><p>Now, you need to stage and commit all the 
+relevant files:</p>
+<pre><code> git add hw0/hello.js &amp;&amp; git commit -m &quot;done with hw0&quot;
+</code></pre><p>Push changes to Github:</p>
+<pre><code> git push origin master
+</code></pre></li>
+<li><p>Follow steps 4 and 5 in the next section to submit the Pull Request and finish Homework 0.</p>
+</li>
+</ol>
 <h3 id="working-on-homework">Working on homework</h3>
 <ol>
 <li><p>First, get any files/folders that were added to the class homework
