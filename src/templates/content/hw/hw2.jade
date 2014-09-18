@@ -67,7 +67,7 @@
          */
         findWithAttribute: function (attrs) { }
       }
-  
+
   These are not the only properties and methods allowed in the class; feel free to
   add more as necessary for your implementation. If you define properties or
   methods that you intend to be private (not part of the XML document object
@@ -76,6 +76,17 @@
   function on `XMLElement`s that takes a hash and updates the stored attributes
   for a node.
   
+  However, the XMLElement constructor _should_ take in a single config object (hash) that specifies
+  its name and attributes. You should be able to call it like this:
+
+      var elmnt = new XMLElement({
+        name: "My awesome node",
+        attributes: {
+          title: "The Most Awesome Node",
+          isAwesome: true
+        }
+      });
+
   ___TODO___: Define a class called `XMLText` that simply wraps a text string in
   the XML tree. For example, the text inside `<greeting>Hello world!</greeting>`
   would be an `XMLText` object with the properties:
@@ -84,6 +95,10 @@
         type: 'text',
         value: 'Hello world!'
       }
+
+  The constructor for your XMLText object should take in value, like so:
+
+      var txt = new XMLText('My awesome text node');
   
   Here's an example of what the children array in
   `<xml>Hello, <who name="world">world</who>!</xml>` would look like:
@@ -157,16 +172,27 @@
   get this information in the parser callback; simply the relevant information
   that was just parsed.
 
+  In the end, you should be able to call the XMLDocumentBuilder like so:
+
+      var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
+        // This callback is invoked when the XML document model is fully built.
+
+        console.log(doc);
+      });
+
   ## Debugging
   
   In the implementation stub, there are module exports set up for the `xml-model`
-  file. You are welcome to add more exports for testing. For example, if you set
+  file. __We will be using the provided 3 attributes (XMLElement, XMLDocument,
+  and XMLDocumentBuilder) to test your code, so you should *not* take them out. __
+  However, you are welcome to add more exports for testing. For example, if you set
   up a testing function called `testModel`, your exports at the bottom of the file
-  might look like
+  might look like:
   
       module.exports = {
         XMLElement: XMLElement,
         XMLDocument: XMLDocument,
+        XMLDocumentBuilder: XMLDocumentBuilder,
         testModel: testModel
       };
   
@@ -176,24 +202,7 @@
       bash-3.2$ node
       node> var xml = require('./xml-model');
       node> xml.testModel();
-  
-  Working with the returned `XMLDocument` might be a little tricky since it is
-  only returned in a callback from `XMLDocumentBuilder`, so you could expose a
-  global object and attach the built `XMLDocument` to this object in the callback.
-  Something like this:
-  
-      var MY_MODEL = { };
-  
-      var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
-        MY_MODEL.doc = doc;
-      });
-  
-      // -------------------------
-  
-      module.exports = {
-        model: MY_MODEL
-      };
-  
+
   Also, if you're feeling adventurous, you could learn about the
   [node debugger](http://nodejs.org/api/debugger.html)
   (related: [node-inspector](https://github.com/node-inspector/node-inspector)).

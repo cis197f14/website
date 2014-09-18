@@ -1345,13 +1345,24 @@ model), it&#39;s good practice to signify this with an underscore <code>_</code>
 the property / method name. For example, you might define a <code>_setAttributes</code>
 function on <code>XMLElement</code>s that takes a hash and updates the stored attributes
 for a node.</p>
-<p><strong><em>TODO</em></strong>: Define a class called <code>XMLText</code> that simply wraps a text string in
+<p>However, the XMLElement constructor <em>should</em> take in a single config object (hash) that specifies
+its name and attributes. You should be able to call it like this:</p>
+<pre><code>var elmnt = new XMLElement({
+  name: &quot;My awesome node&quot;,
+  attributes: {
+    title: &quot;The Most Awesome Node&quot;,
+    isAwesome: true
+  }
+});
+</code></pre><p><strong><em>TODO</em></strong>: Define a class called <code>XMLText</code> that simply wraps a text string in
 the XML tree. For example, the text inside <code>&lt;greeting&gt;Hello world!&lt;/greeting&gt;</code>
 would be an <code>XMLText</code> object with the properties:</p>
 <pre><code>{
   type: &#39;text&#39;,
   value: &#39;Hello world!&#39;
 }
+</code></pre><p>The constructor for your XMLText object should take in value, like so:</p>
+<pre><code>var txt = new XMLText(&#39;My awesome text node&#39;);
 </code></pre><p>Here&#39;s an example of what the children array in
 <code>&lt;xml&gt;Hello, &lt;who name=&quot;world&quot;&gt;world&lt;/who&gt;!&lt;/xml&gt;</code> would look like:</p>
 <pre><code>children: [
@@ -1415,14 +1426,23 @@ would behoove you to keep track (with a reference in the document builder class)
 of the current <strong>context</strong> of the parser, or where it is in the tree. You won&#39;t
 get this information in the parser callback; simply the relevant information
 that was just parsed.</p>
-<h2 id="debugging">Debugging</h2>
+<p>In the end, you should be able to call the XMLDocumentBuilder like so:</p>
+<pre><code>var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
+  // This callback is invoked when the XML document model is fully built.
+
+  console.log(doc);
+});
+</code></pre><h2 id="debugging">Debugging</h2>
 <p>In the implementation stub, there are module exports set up for the <code>xml-model</code>
-file. You are welcome to add more exports for testing. For example, if you set
+file. <strong>We will be using the provided 3 attributes (XMLElement, XMLDocument,
+and XMLDocumentBuilder) to test your code, so you should <em>not</em> take them out. </strong>
+However, you are welcome to add more exports for testing. For example, if you set
 up a testing function called <code>testModel</code>, your exports at the bottom of the file
-might look like</p>
+might look like:</p>
 <pre><code>module.exports = {
   XMLElement: XMLElement,
   XMLDocument: XMLDocument,
+  XMLDocumentBuilder: XMLDocumentBuilder,
   testModel: testModel
 };
 </code></pre><p>To run the file and load these exports into a node interpreter, use the
@@ -1430,21 +1450,6 @@ following commands (in the hw2 folder):</p>
 <pre><code>bash-3.2$ node
 node&gt; var xml = require(&#39;./xml-model&#39;);
 node&gt; xml.testModel();
-</code></pre><p>Working with the returned <code>XMLDocument</code> might be a little tricky since it is
-only returned in a callback from <code>XMLDocumentBuilder</code>, so you could expose a
-global object and attach the built <code>XMLDocument</code> to this object in the callback.
-Something like this:</p>
-<pre><code>var MY_MODEL = { };
-
-var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
-  MY_MODEL.doc = doc;
-});
-
-// -------------------------
-
-module.exports = {
-  model: MY_MODEL
-};
 </code></pre><p>Also, if you&#39;re feeling adventurous, you could learn about the
 <a href="http://nodejs.org/api/debugger.html">node debugger</a>
 (related: <a href="https://github.com/node-inspector/node-inspector">node-inspector</a>).</p>
