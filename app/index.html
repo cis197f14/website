@@ -1430,21 +1430,6 @@ following commands (in the hw2 folder):</p>
 <pre><code>bash-3.2$ node
 node&gt; var xml = require(&#39;./xml-model&#39;);
 node&gt; xml.testModel();
-</code></pre><p>Working with the returned <code>XMLDocument</code> might be a little tricky since it is
-only returned in a callback from <code>XMLDocumentBuilder</code>, so you could expose a
-global object and attach the built <code>XMLDocument</code> to this object in the callback.
-Something like this:</p>
-<pre><code>var MY_MODEL = { };
-
-var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
-  MY_MODEL.doc = doc;
-});
-
-// -------------------------
-
-module.exports = {
-  model: MY_MODEL
-};
 </code></pre><p>Also, if you&#39;re feeling adventurous, you could learn about the
 <a href="http://nodejs.org/api/debugger.html">node debugger</a>
 (related: <a href="https://github.com/node-inspector/node-inspector">node-inspector</a>).</p>

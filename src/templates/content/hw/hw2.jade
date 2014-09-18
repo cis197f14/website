@@ -176,24 +176,7 @@
       bash-3.2$ node
       node> var xml = require('./xml-model');
       node> xml.testModel();
-  
-  Working with the returned `XMLDocument` might be a little tricky since it is
-  only returned in a callback from `XMLDocumentBuilder`, so you could expose a
-  global object and attach the built `XMLDocument` to this object in the callback.
-  Something like this:
-  
-      var MY_MODEL = { };
-  
-      var builder = new XMLDocumentBuilder(SAMPLE_XML, function (doc) {
-        MY_MODEL.doc = doc;
-      });
-  
-      // -------------------------
-  
-      module.exports = {
-        model: MY_MODEL
-      };
-  
+
   Also, if you're feeling adventurous, you could learn about the
   [node debugger](http://nodejs.org/api/debugger.html)
   (related: [node-inspector](https://github.com/node-inspector/node-inspector)).
