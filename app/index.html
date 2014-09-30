@@ -66,9 +66,8 @@ Refer to the <a href="#style">style guide</a> for coding JavaScript.</p>
 <p>hw0, due <strong>Tues, Sept. 9</strong>: <a href="#github">Set up Github submission</a>.</p>
 <p>hw1, due <strong>Tues, Sept. 16</strong>: <a href="https://github.com/cis197f14/hw/blob/master/hw1/exercises.js">Finger exercises</a>.</p>
 <p>hw2, due <strong>Fri, Sept. 26</strong>: <a href="#hw2">XML object modeling</a>.</p>
+<p>hw3, due <strong>Tues, Oct. 7</strong>: <a href="#hw3">Pokémon map building</a>.</p>
 <!--
-hw3, due __Sat, Feb. 22__: [Pokémon map building](#hw3).
-
 hw4, due __Sun, March 2__: [Backbone.js starter](#hw4).
 
 hw5, due __Sun, March 23__: [Intermediate Backbone.js app](#hw5).
@@ -149,10 +148,20 @@ See the [__proposal spec__](#proposal) for more information.
               </td>
               <td><a href='https://github.com/cis197f14/lectures/tree/master/lec3'>Lec 3</a></td>
               <td>
-                Eloquent JS, Chapter 13 <br/>
                 <a href="https://developers.google.com/chrome-developer-tools/">
                   Chrome DevTools docs
                 </a>
+                
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>9/30</td>
+              <td><a href="#browser-events">Browser Events</a></td>
+              <td><a href='https://github.com/cis197f14/lectures/tree/master/lec4'>Lec 4</a></td>
+              <td>
+                Eloquent JS, Chapter 13 <br/>
+                
                 
               </td>
             </tr>
@@ -2168,13 +2177,13 @@ $grass.on(&#39;mousedown&#39;, function (e) {
 <h3 id="make-cool-maps">Make cool maps</h3>
 <p>If you build any cool Pokémon maps once you&#39;re finished with the assignment,
 please share them! Post a screenshot to our Piazza forum.</p>
-<h3 id="a-playable-character-5-pts-extra-credit-">A playable character (5 pts extra credit)</h3>
+<h3 id="a-playable-character-optional-">A playable character (optional)</h3>
 <p>If you&#39;re feeling adventurous like Ash Ketchum, you can go on to implement
 a playable character within this map once it&#39;s built. There are image assets
 available for you to leverage for this task in the folders
 <code>hw3/lib/img/tilesets</code> and <code>hw3/lib/images/sprites</code> (image tiles for Pikachu,
 Ash, etc).</p>
-<p><strong><em>Extra Credit</em></strong>: Implement a separate class called <code>Player</code> that generates
+<p>Implement a separate class called <code>Player</code> (like we did in class) that generates
 a player on the map when a &#39;Play&#39; button is clicked on the page. This player can
 move around with the arrow keys. They should be able to move over terrain but
 not through obstructions (look at the images folder or <code>main.css</code> to see which
