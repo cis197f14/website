@@ -88,96 +88,6 @@
   control scheme involving `setTimeout`. The code looks ugly and is brittle. What
   if we encountered a large JSON file and reading it took a long time?
   
-  Perhaps we could improve upon this with some events control flow. Let's
-  assume that a simple `Events` mixin is already defined for us (similar to
-  `Backbone.Events`). Here's how we might construct an asynchronous "__stream__"
-  object:
-  
-      function getDirectoryContentsStream (dirname) {
-        var contentsStream = _.extend({}, Events);
-  
-        fs.readdir(dirname, function (err, filenames) {
-          var jsonFiles = _.filter(filenames, isJSONFile)
-            , filesRead = 0;
-  
-          _(jsonFiles).each(function (filename) {
-            fs.readFile(dirname + '/' + filename, function (err, data) {
-  
-              contentsStream.trigger('file', JSON.parse(data));
-  
-              if (++filesRead === jsonFiles.length) {
-                contentsStream.trigger('complete');
-              }
-            });
-          });
-  
-        });
-  
-        return contentsStream;
-      }
-  
-  A number of things have changed. There is no callback argument required; all the
-  asynchronous control happens on the stream once it is returned from this
-  function. The two events fired are:
-  
-  * `'file'`: passes along the parsed JSON object from a file once it's read
-  * `'complete'`: simply notifies that the stream has finished its work and all
-    the relevant files have been read.
-  
-  Here's how you use the stream:
-  
-      var stream    = getDirectoryContentsStream('data')
-        , contents  = [];
-  
-      stream.on('file', function (json) {
-        console.log('*** got file ***');
-        contents.push(json);
-      });
-  
-      stream.on('complete', function () {
-        console.log('*** complete ***');
-        console.log(contents);
-      });
-  
-  -------------------------------------------------------------------------------
-  
-  ## `EventEmitter` and `Stream` in Node
-  
-  What we've just built here are the basics of two fairly important core modules
-  in Node. You can access the `EventEmitter` class with
-  `require('events').EventEmitter`; its API is similar to the one we've been
-  using as `Event`.
-  
-  `Stream` is an abstract interface implemented by various classes / objects in
-  Node. It represents a data resource that can be written to (_Writable_), read
-  from (_Readable_), or both (_Duplex_). All Streams are EventEmitters; they often
-  have additional custom methods and properties.
-  
-  Readable streams abstract some _data source_; data essentially comes out of
-  them in chunks. You can pause, resume, pipe, and do other things with these
-  streams. Some examples of readable streams:
-  
-  * `http` responses on a client
-  * `http` requests on a server
-  * `fs` read streams
-  * `zlib` streams
-  * `crypto` streams
-  * `tcp` sockets
-  * `child-process` stdout and stderr
-  * `process.stdin`
-  
-  To get data out of the stream, simply listen for its `'data'` event.
-  
-      var fstream = fs.createReadStream('data/foo.json');
-  
-      fstream.on('data', function (data) {
-        // ...
-      });
-  
-  For more information about objects that implement this interface, you'll want to
-  consult the [Node documentation](http://nodejs.org/api/).
-  
-  
   -------------------------------------------------------------------------------
   
   
@@ -236,7 +146,7 @@
   
   ...you might write a series of promise transformations:
   
-      q(fs.readdir, dirname)
+      fs.readdir(dirname)
         .then(getFirstFile)
         .then(getFileStats)
         .then(filterRecentFile)
@@ -402,8 +312,9 @@
   Now that we've seen all their great benefits, you should go check out some
   promise libraries! Unfortunately they are not included in the ECMAScript
   standard, so yes, we do have to resort to libraries here. Some good ones are
+  [bluebird](https://github.com/petkaantonov/bluebird/blob/master/API.md),
   [Q](https://github.com/kriskowal/q) and
-  [rsvp.js](https://github.com/tildeio/rsvp.js). These both implement the
+  [rsvp.js](https://github.com/tildeio/rsvp.js). These implement the
   "Promises/A" spec, which will soon be included in ES6 (yay built-in promises!).
   They also have some good documentation which is good to read up on.
 

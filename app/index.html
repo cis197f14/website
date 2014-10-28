@@ -201,6 +201,21 @@ See the [__proposal spec__](#proposal) for more information.
                   Todo app source
                 </a>
                 
+              </td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>10/28</td>
+              <td>
+                <a href="#lecture9">
+                  Promises
+                </a>
+              </td>
+              <td><a href='https://github.com/cis197f14/lectures/tree/master/lec8'>Lec 8</a></td>
+              <td>
+                <a href="http://mattgreer.org/articles/promises-in-wicked-detail/">
+                  Promises in Wicked Detail
+                </a>
                 
               </td>
             </tr>
@@ -4849,84 +4864,6 @@ functions:</p>
 </code></pre><p>But now we&#39;ve introduced more asynchronous code and an arbitrarily-defined
 control scheme involving <code>setTimeout</code>. The code looks ugly and is brittle. What
 if we encountered a large JSON file and reading it took a long time?</p>
-<p>Perhaps we could improve upon this with some events control flow. Let&#39;s
-assume that a simple <code>Events</code> mixin is already defined for us (similar to
-<code>Backbone.Events</code>). Here&#39;s how we might construct an asynchronous &quot;<strong>stream</strong>&quot;
-object:</p>
-<pre><code>function getDirectoryContentsStream (dirname) {
-  var contentsStream = _.extend({}, Events);
-
-  fs.readdir(dirname, function (err, filenames) {
-    var jsonFiles = _.filter(filenames, isJSONFile)
-      , filesRead = 0;
-
-    _(jsonFiles).each(function (filename) {
-      fs.readFile(dirname + &#39;/&#39; + filename, function (err, data) {
-
-        contentsStream.trigger(&#39;file&#39;, JSON.parse(data));
-
-        if (++filesRead === jsonFiles.length) {
-          contentsStream.trigger(&#39;complete&#39;);
-        }
-      });
-    });
-
-  });
-
-  return contentsStream;
-}
-</code></pre><p>A number of things have changed. There is no callback argument required; all the
-asynchronous control happens on the stream once it is returned from this
-function. The two events fired are:</p>
-<ul>
-<li><code>&#39;file&#39;</code>: passes along the parsed JSON object from a file once it&#39;s read</li>
-<li><code>&#39;complete&#39;</code>: simply notifies that the stream has finished its work and all
-the relevant files have been read.</li>
-</ul>
-<p>Here&#39;s how you use the stream:</p>
-<pre><code>var stream    = getDirectoryContentsStream(&#39;data&#39;)
-  , contents  = [];
-
-stream.on(&#39;file&#39;, function (json) {
-  console.log(&#39;*** got file ***&#39;);
-  contents.push(json);
-});
-
-stream.on(&#39;complete&#39;, function () {
-  console.log(&#39;*** complete ***&#39;);
-  console.log(contents);
-});
-</code></pre><hr>
-<h2 id="-eventemitter-and-stream-in-node"><code>EventEmitter</code> and <code>Stream</code> in Node</h2>
-<p>What we&#39;ve just built here are the basics of two fairly important core modules
-in Node. You can access the <code>EventEmitter</code> class with
-<code>require(&#39;events&#39;).EventEmitter</code>; its API is similar to the one we&#39;ve been
-using as <code>Event</code>.</p>
-<p><code>Stream</code> is an abstract interface implemented by various classes / objects in
-Node. It represents a data resource that can be written to (<em>Writable</em>), read
-from (<em>Readable</em>), or both (<em>Duplex</em>). All Streams are EventEmitters; they often
-have additional custom methods and properties.</p>
-<p>Readable streams abstract some <em>data source</em>; data essentially comes out of
-them in chunks. You can pause, resume, pipe, and do other things with these
-streams. Some examples of readable streams:</p>
-<ul>
-<li><code>http</code> responses on a client</li>
-<li><code>http</code> requests on a server</li>
-<li><code>fs</code> read streams</li>
-<li><code>zlib</code> streams</li>
-<li><code>crypto</code> streams</li>
-<li><code>tcp</code> sockets</li>
-<li><code>child-process</code> stdout and stderr</li>
-<li><code>process.stdin</code></li>
-</ul>
-<p>To get data out of the stream, simply listen for its <code>&#39;data&#39;</code> event.</p>
-<pre><code>var fstream = fs.createReadStream(&#39;data/foo.json&#39;);
-
-fstream.on(&#39;data&#39;, function (data) {
-  // ...
-});
-</code></pre><p>For more information about objects that implement this interface, you&#39;ll want to
-consult the <a href="http://nodejs.org/api/">Node documentation</a>.</p>
 <hr>
 <h2 id="promises">Promises</h2>
 <p>Let&#39;s go back to the asynchronous task of getting the file contents in
@@ -4973,7 +4910,7 @@ more complex usage scenarios – namely, with chaining and error handling.</p>
   });
 });
 </code></pre><p>...you might write a series of promise transformations:</p>
-<pre><code>q(fs.readdir, dirname)
+<pre><code>fs.readdir(dirname)
   .then(getFirstFile)
   .then(getFileStats)
   .then(filterRecentFile)
@@ -5114,8 +5051,9 @@ Detail</a>.</p>
 <p>Now that we&#39;ve seen all their great benefits, you should go check out some
 promise libraries! Unfortunately they are not included in the ECMAScript
 standard, so yes, we do have to resort to libraries here. Some good ones are
+<a href="https://github.com/petkaantonov/bluebird/blob/master/API.md">bluebird</a>,
 <a href="https://github.com/kriskowal/q">Q</a> and
-<a href="https://github.com/tildeio/rsvp.js">rsvp.js</a>. These both implement the
+<a href="https://github.com/tildeio/rsvp.js">rsvp.js</a>. These implement the
 &quot;Promises/A&quot; spec, which will soon be included in ES6 (yay built-in promises!).
 They also have some good documentation which is good to read up on.</p>
 
