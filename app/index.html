@@ -69,8 +69,8 @@ Refer to the <a href="#style">style guide</a> for coding JavaScript.</p>
 <p>hw3, due <strong>Tues, Oct. 7</strong>: <a href="#hw3">Pokémon map building</a>.</p>
 <p>hw4, due <strong>Tues, Oct. 21</strong>: <a href="#hw4">Backbone.js starter</a>.</p>
 <p>hw5, due <strong>Fri, Oct. 31</strong>: <a href="#hw5">Intermediate Backbone.js app</a>.</p>
+<p>hw6, due <strong>Tuesday, November 18</strong>: <a href="#hw6">Autocompleter</a>.</p>
 <!--
-hw6, due __Fri, April 11__: [Full stack JS app](#hw6).
 
 hw7, due __Wed, April 16__: [Final project proposal](#proposal).
 
@@ -4039,110 +4039,104 @@ middleware</li>
 </ul>
 
       </section>
-      <section class="pure-u-3-4 notes hw6 language-javascript"><h1 id="homework-6-full-stack-js-application">Homework 6: Full Stack JS Application</h1>
-<p>Due <em>Friday, April 11 at 9 AM</em> (extended from Wednesday).</p>
+      <section class="pure-u-3-4 notes hw6 language-javascript"><h1 id="homework-6-autocomplete">Homework 6: Autocomplete</h1>
+<p>Due <em>Tuesday, November 18 at 9 AM</em>.</p>
 <p>Implementation stub available in the
 <a href="https://github.com/cis197s14/hw/blob/master/hw6/">homework repository</a>.</p>
-<p>We&#39;re going to be finishing up our Pokémon application by integrating the
-client-side Backbone app with an Express web API. You&#39;ll be doing some
-refactoring and implementing map persistence through the local web server.</p>
-<p>The below gif shows what the final result will look like. Each map is being
-automatically saved to the server whenever an edit is made.</p>
-<p><img src="build/images/gifs/switching-maps.gif" alt="switching-maps"></p>
-<p>Instead of persisting maps via <code>localStorage</code>, we&#39;re going to use our own API
-and load the stored maps into a <code>Backbone.Collection</code> called <code>MapStorage</code>.
-Typically with Backbone Collections, you will instantiate it and then call
-<code>.fetch()</code>, which will send a GET request to the <code>url</code> specified for the
-Collection. Depending on options you pass into <code>fetch</code>, this may trigger a
-<code>reset</code> event. In the implementation stub provided to you, the application is
-initialized once this event is fired (i.e., the data we need from the server is
-ready to be used).</p>
-<h3 id="application-structure">Application Structure</h3>
-<p>The Pokémon client-side application is now served (statically) through a node
-server. It has also been reconfigured into AMD modules and the Backbone models
-/ views are in their corresponding folders.</p>
-<p>To run the application:</p>
-<ul>
-<li>Install dependencies with <code>npm install</code> (dependencies are specified in
-<code>package.json</code>)</li>
-<li>Run <code>node server.js</code> (if this crashes, you&#39;ll have to restart it...)</li>
-<li>Navigate to <code>http://localhost:3000/#build/default</code></li>
-</ul>
-<h4 id="what-s-provided-in-the-implementation-stub">What&#39;s provided in the implementation stub</h4>
-<ul>
-<li><p>A <code>map-storage</code> module on the server that implements the business logic of map
-data persistence. Take a look at this file to see how <code>fs</code> (the built-in file
-system library) and <code>RSVP</code> (a Promise library) are used. Maps are stored as
-JSON files in the folder <code>hw6/maps/</code>.</p>
-</li>
-<li><p>Updated Backbone routes on the client that contain the name of the map
-currently being used:</p>
-<ul>
-<li><code>build/:mapName</code>: initializes the builder view</li>
-<li><code>play/:mapName/r:row/c:col</code>: initializes the player view</li>
-<li><code>new/:mapName</code>: starts off a new blank map, redirects to <code>build/:mapName</code></li>
-</ul>
-<p>Most of the initialization / routing logic is already implemented in
-<code>public/app/pokemon.js</code>.</p>
-</li>
-<li><p>Model initialization &amp; general bookkeeping in the <code>App</code> model
-(<code>public/app/models/app.js</code>). This model also enables communication between
-various other models.</p>
-</li>
-<li><p>A stub for <code>AppView</code> (<code>public/app/views/app.js</code>). This view should instantiate
-a <code>MapView</code>, <code>PlayerView</code>, and <code>BuilderView</code> as well as provide functions to
-switch between application states (playing / building). It should also have
-standard rendering logic using the new underscore template in <code>#app-template</code>
-(it will probably help to override <code>App.toJSON()</code> here).
-Finally, it should invoke the &#39;newMap&#39; route when a user hits &#39;Enter&#39; on the
-new map text field.</p>
-</li>
-<li><p>Complete <code>BuilderView</code>, <code>PaletteView</code>, and <code>PlayerView</code>.</p>
-</li>
-<li><p>A nearly complete <code>MapView</code> that only requires one additional rendering
-method.</p>
-</li>
-<li><p>Underscore templates for all views in <code>index.html</code>. Note that there is no
-HTML markup rendered on page load; rather everything will be rendered through
-JS.</p>
-</li>
-<li><p>The <code>Player</code> model. Note that this model triggers a <code>&#39;shiftMap&#39;</code> event to
-tell the application router to move the visible map area when the player
-reaches an edge rather than calling the router directly. This is a more
-convenient method of control now that we have modules and don&#39;t want all our
-application models globally available in an object like <code>POKEMON</code>.</p>
-</li>
-</ul>
-<h3 id="completing-the-assignment">Completing the assignment</h3>
-<ol>
-<li>Complete the <code>TODO</code> items in <code>server.js</code>. You can test the API routes by
-navigating to them in your web browser (<code>localhost:3000/api/maps</code>).</li>
-<li>Fill in the <code>MapStorage</code> stub to talk to the server. Once this module
-fetches maps successfully from the server, it should trigger a <code>&#39;reset&#39;</code>
-event, which in turn triggers a <code>&#39;ready&#39;</code> event on the <code>App</code> model. This
-essentially initializes the rest of the application.</li>
-<li>Study and understand the <code>App</code> and <code>Builder</code> models. Note that a reference
-to the currently selected map model (from all the maps we have loaded in
-<code>MapStorage</code>) is kept as an attribute called <code>&#39;mapModel&#39;</code> on the <code>App</code>
- model.</li>
-<li>Fill in the <code>AppView</code> stub. It needs to initialize its children views
-(within <code>initialize</code>, naturally), implement a <code>render</code> function to display
-the overall layout and application controls on the page, and implement
-two methods to switch between &#39;playing&#39; mode and &#39;building&#39; mode by
-manipulating its children views. Note that you must pass a special object
-to <code>MapView</code>&#39;s <code>render</code> method to let it show the visible map properly;
-this is documented within <code>views/map.js</code> (<em>hint</em>: check out the routing
-function for this situation in <code>pokemon.js</code>).</li>
-<li>Finish the implementation of <code>MapView</code>.</li>
-</ol>
-<p>There is additional instruction within the comment blocks in the code. Try
-and make your application match the demonstration gif near the top of this page
-(it illustrates most of the new functionality)!</p>
+<p>This assignment will tie up what you&#39;ve learned about classes, promises, Backbone,
+and jQuery into a single widget: an autocompleter (much like the one that is used
+for <a href="https://penncoursereview.com/">Penn Course Review</a>).</p>
+<h3 id="before-starting-the-assignment">Before starting the assignment</h3>
+<p>Review the docs for <a href="http://backbonejs.org/#View">Backbone Views</a>,
+the <a href="https://github.com/petkaantonov/bluebird/blob/master/API.md">Bluebird promise API</a>,
+and <a href="https://api.jquery.com/jQuery.get/">jQuery&#39;s <code>.get</code> function</a>.</p>
+<h3 id="running-the-code">Running the code</h3>
+<p>You may need the <a href="https://www.npmjs.org/package/http-server">http-server</a> npm package in order
+to run this code because of protocol restrictions (in some browsers, you cannot make an AJAX HTTP
+request from a filesystem HTML page). Install it with <code>npm install -g http-server</code> and
+run it from you project directory with <code> http-server ./</code>.</p>
+<h3 id="part-1-tries-trie-js-">Part 1: Tries (trie.js)</h3>
+<p>The first thing we&#39;ll need to write the autocompleter is an efficient way to store the
+valid words to match. The correct data structure here is called a <em>trie</em> (short for
+re<em>trie</em>val), and if you&#39;ve taken CIS 121, you&#39;re already familiar with it. Just in case
+you&#39;re rusty, though, here&#39;s an <a href="http://exceptional-code.blogspot.com/2011/07/coding-up-trie-prefix-tree.html">excellent article</a>
+to help jog your memory. <em>In order to simplify the implementation, we will be using upper-case only.
+All words should be converted using <code>toUpperCase()</code> before adding or retreiving.</em></p>
+<p>JavaScript conveniently has hashes (object literals) built right in - we&#39;ll use them for
+the nodes of our simple trie. The top-level node of the trie (<code>this.data</code> in the stub)
+starts out as an empty object. Your job is to implement the <code>addWord</code> and
+<code>getSuggestions</code> functions.</p>
+<p><strong><em>TODO</em></strong>: Implement <code>addWord</code>. </p>
+<p>The pseudocode for adding an element to a node in the trie is:</p>
+<pre>
+addWord(word, trieNode) =
+  1. If word is the empty string:
+    1. Add a 'true' node with key "end" (in our case set, trieNode["end"] =  true)
+    2. Return
+  2. If trieNode does not have a child labeled with the first character of `word`:
+    1. Add a child labeled with that character to trieNode
+  3. Let `newWord` equal `word` but with the first character removed
+  4. Let `newNode` be the child of trieNode labeled with the first character of `word`
+  5. Recursively call addWord(newWord, newNode)
+</pre>
+
+<p>Call this algorithm starting with the input word and the root of the trie (<code>this.data</code>).
+There are some simple test cases in the code to help get you started.
+Don&#39;t forget to convert the input to upper case!</p>
+<p><strong><em>TODO</em></strong>: Implement <code>getSuggestions</code>.</p>
+<p>This one is a little trickier than <code>addWord</code>, and you won&#39;t have pseudocode to guide
+you through this time. In order to get the suggestions for a given prefix, you&#39;ll need to first
+see if <em>any</em> word starting with the prefix is in the trie by traversing from the root. If there are
+words starting with that prefix, then you should return an array of all of them. Keep in mind that in
+this trie implementation, having an &quot;end&quot; key means that a node is the end of a valid word in the trie.</p>
+<p>If no words are found, then this method should return the empty array.
+Again, there are some simple test cases in the code to help get you started.
+Again, don&#39;t forget to convert the input to upper case!</p>
+<p>Make sure you have implemented Trie correctly before going on to the next part of the assignment.</p>
+<h3 id="part-2-ajax-and-promises-promisifiedajaxsimple-js-promisifiedajax-js-">Part 2: AJAX and Promises (promisifiedAjaxSimple.js, promisifiedAjax.js)</h3>
+<p>In this section we are going to use promises to grab dictionary data from a public server. Just
+like Penn Course Review, the words we are going to work with will be the names of classes at Penn.</p>
+<p><strong><em>TODO</em></strong>: Implement <code>ajaxGet</code>.</p>
+<p>This function takes in a URL that points to some JSON and returns a promise that resolves to the
+JSON data. Use Bluebird; this should be a one-liner.</p>
+<p><strong><em>TODO</em></strong>: Implement <code>trieFromURL</code>.</p>
+<p>This function takes in a URL that points to some JSON and returns a promise that resolves to a
+trie formed from the JSON data. Use ajaxGet; this should be &lt;5 lines.</p>
+<p><strong><em>TODO</em></strong>: Implement <code>multiGet</code>.</p>
+<p>This method takes in a URL that represents more documents to get, and a base URL for those documents.
+It returns a promise for an array that represents all the data from all the documents (do not include
+the original document from the URL in this array).</p>
+<p>See stub for step-by-step detailed instructions.</p>
+<p><strong>HINT</strong>: Use <a href="https://github.com/petkaantonov/bluebird/blob/master/API.md#all---promise">Promise.all</a></p>
+<p><strong><em>TODO</em></strong>: Implement <code>trieFromDataPromise</code>.</p>
+<p>This method takes in a promise for data (a string array)and returns a trie constructed from that data.
+Use multiGet; this should be &lt;5 lines. There is a test case to make sure this method is working correctly.</p>
+<h3 id="part-3-appview">Part 3: AppView</h3>
+<p>Now that we can make tries from remotely-hosted JSON dictionaries, all that&#39;s left is to implement
+the autocompleter in HTML code. Luckily, we&#39;ve taken care of the CSS and the templating for you. All
+you need to do is implement a few missing methods on appView.</p>
+<p><strong><em>TODO</em></strong>: Define <code>events</code> in AppView.</p>
+<p>The events app should do a search (the next method to do) every time a key is pressed. You will
+find the <a href="http://backbonejs.org/#View">Backbone Views documentation</a> useful here!</p>
+<p><strong><em>TODO</em></strong>: Define a <code>search</code> in AppView.</p>
+<p>This function should be called every time a keypress is detected. It will use the trie promise
+passed in during view initialization to give back suggestions for autocompletion and then call
+<code>render</code> with the suggestions array as an argument.</p>
+<p>When you&#39;re all done it should look something like this:</p>
+<p><img src="https://i.imgur.com/aBziSGM.gif" alt="Demo"></p>
 <h3 id="notes">Notes</h3>
 <p>As a general rule, please remove &quot;TODO&quot; comment blocks after you implement that
 portion of the assignment.</p>
-<p><strong><em>Extra Credit</em></strong> (3pts): Implement &quot;delete map&quot; functionality that removes
-a map from the data store.</p>
+<p><strong><em>Extra Credit</em></strong> (3pts): Implement &quot;ExtraCreditTrie&quot; (in ExtraCreditTrie.js). This trie functions
+very similarly to the simple trie that we implemented in part 1, except that it is
+<strong>partially case-insensitive</strong>. That is, the trie distinguishes between different capitalizations
+when adding words; but when getting suggestions, it returns <em>all</em> matches, <em>regardless of case</em>,
+  <em>in the original case they were added</em>.</p>
+<p>To give a concrete example: you could add &quot;PennApps&quot;, &quot;Upenn&quot;, and &quot;Pennapps&quot; to an ExtraCreditTrie. Then running
+getSuggestions(&#39;penn&#39;) would return the array [&quot;PennApps&quot;, &quot;Pennapps&quot;].</p>
+<p><strong><em>Extra Credit</em></strong> (2pts): Modify ExtraCreditTrie so that it can start matching at any point in the
+a word. For instance, you could add &quot;PennApps&quot;, &quot;Upenn&quot;, and &quot;pineapple&quot; to an ExtraCreditTrie. 
+Then running getSuggestions(&#39;app&#39;) would return the array [&quot;PennApps&quot;, &quot;pineapple&quot;].</p>
 
       </section>
       <section class="pure-u-3-4 notes proposal language-javascript"><h1 id="final-project-proposal">Final Project Proposal</h1>

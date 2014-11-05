@@ -1,118 +1,147 @@
 :markdown
-  Homework 6: Full Stack JS Application
+  Homework 6: Autocomplete
   =====================================
-  
-  Due _Friday, April 11 at 9 AM_ (extended from Wednesday).
-  
+
+  Due _Tuesday, November 18 at 9 AM_.
+
   Implementation stub available in the
   [homework repository](https://github.com/cis197s14/hw/blob/master/hw6/).
-  
-  We're going to be finishing up our Pokémon application by integrating the
-  client-side Backbone app with an Express web API. You'll be doing some
-  refactoring and implementing map persistence through the local web server.
-  
-  The below gif shows what the final result will look like. Each map is being
-  automatically saved to the server whenever an edit is made.
-  
-  ![switching-maps](build/images/gifs/switching-maps.gif)
-  
-  Instead of persisting maps via `localStorage`, we're going to use our own API
-  and load the stored maps into a `Backbone.Collection` called `MapStorage`.
-  Typically with Backbone Collections, you will instantiate it and then call
-  `.fetch()`, which will send a GET request to the `url` specified for the
-  Collection. Depending on options you pass into `fetch`, this may trigger a
-  `reset` event. In the implementation stub provided to you, the application is
-  initialized once this event is fired (i.e., the data we need from the server is
-  ready to be used).
-  
-  ### Application Structure
-  
-  The Pokémon client-side application is now served (statically) through a node
-  server. It has also been reconfigured into AMD modules and the Backbone models
-  / views are in their corresponding folders.
-  
-  To run the application:
-  
-  * Install dependencies with `npm install` (dependencies are specified in
-    `package.json`)
-  * Run `node server.js` (if this crashes, you'll have to restart it...)
-  * Navigate to `http://localhost:3000/#build/default`
-  
-  #### What's provided in the implementation stub
-  
-  * A `map-storage` module on the server that implements the business logic of map
-    data persistence. Take a look at this file to see how `fs` (the built-in file
-    system library) and `RSVP` (a Promise library) are used. Maps are stored as
-    JSON files in the folder `hw6/maps/`.
-  
-  * Updated Backbone routes on the client that contain the name of the map
-    currently being used:
-  
-    * `build/:mapName`: initializes the builder view
-    * `play/:mapName/r:row/c:col`: initializes the player view
-    * `new/:mapName`: starts off a new blank map, redirects to `build/:mapName`
-  
-    Most of the initialization / routing logic is already implemented in
-    `public/app/pokemon.js`.
-  
-  * Model initialization & general bookkeeping in the `App` model
-    (`public/app/models/app.js`). This model also enables communication between
-    various other models.
-  
-  * A stub for `AppView` (`public/app/views/app.js`). This view should instantiate
-    a `MapView`, `PlayerView`, and `BuilderView` as well as provide functions to
-    switch between application states (playing / building). It should also have
-    standard rendering logic using the new underscore template in `#app-template`
-    (it will probably help to override `App.toJSON()` here).
-    Finally, it should invoke the 'newMap' route when a user hits 'Enter' on the
-    new map text field.
-  
-  * Complete `BuilderView`, `PaletteView`, and `PlayerView`.
-  
-  * A nearly complete `MapView` that only requires one additional rendering
-    method.
-  
-  * Underscore templates for all views in `index.html`. Note that there is no
-    HTML markup rendered on page load; rather everything will be rendered through
-    JS.
-  
-  * The `Player` model. Note that this model triggers a `'shiftMap'` event to
-    tell the application router to move the visible map area when the player
-    reaches an edge rather than calling the router directly. This is a more
-    convenient method of control now that we have modules and don't want all our
-    application models globally available in an object like `POKEMON`.
-  
-  ### Completing the assignment
 
-  1. Complete the `TODO` items in `server.js`. You can test the API routes by
-     navigating to them in your web browser (`localhost:3000/api/maps`).
-  2. Fill in the `MapStorage` stub to talk to the server. Once this module
-     fetches maps successfully from the server, it should trigger a `'reset'`
-     event, which in turn triggers a `'ready'` event on the `App` model. This
-     essentially initializes the rest of the application.
-  3. Study and understand the `App` and `Builder` models. Note that a reference
-     to the currently selected map model (from all the maps we have loaded in
-     `MapStorage`) is kept as an attribute called `'mapModel'` on the `App`
-      model.
-  4. Fill in the `AppView` stub. It needs to initialize its children views
-     (within `initialize`, naturally), implement a `render` function to display
-     the overall layout and application controls on the page, and implement
-     two methods to switch between 'playing' mode and 'building' mode by
-     manipulating its children views. Note that you must pass a special object
-     to `MapView`'s `render` method to let it show the visible map properly;
-     this is documented within `views/map.js` (_hint_: check out the routing
-     function for this situation in `pokemon.js`).
-  5. Finish the implementation of `MapView`.
+  This assignment will tie up what you've learned about classes, promises, Backbone,
+  and jQuery into a single widget: an autocompleter (much like the one that is used
+  for [Penn Course Review](https://penncoursereview.com/)).
 
-  There is additional instruction within the comment blocks in the code. Try
-  and make your application match the demonstration gif near the top of this page
-  (it illustrates most of the new functionality)!
+  ### Before starting the assignment
+
+  Review the docs for [Backbone Views](http://backbonejs.org/#View),
+  the [Bluebird promise API](https://github.com/petkaantonov/bluebird/blob/master/API.md),
+  and [jQuery's <code>.get</code> function](https://api.jquery.com/jQuery.get/).
+
+  ### Running the code
+
+  You may need the [http-server](https://www.npmjs.org/package/http-server) npm package in order
+  to run this code because of protocol restrictions (in some browsers, you cannot make an AJAX HTTP
+  request from a filesystem HTML page). Install it with <code>npm install -g http-server</code> and
+  run it from you project directory with <code> http-server ./</code>.
+
+  ### Part 1: Tries (trie.js)
+
+  The first thing we'll need to write the autocompleter is an efficient way to store the
+  valid words to match. The correct data structure here is called a *trie* (short for
+  re*trie*val), and if you've taken CIS 121, you're already familiar with it. Just in case
+  you're rusty, though, here's an [excellent article](http://exceptional-code.blogspot.com/2011/07/coding-up-trie-prefix-tree.html)
+  to help jog your memory. _In order to simplify the implementation, we will be using upper-case only.
+  All words should be converted using <code>toUpperCase()</code> before adding or retreiving._
+
+  JavaScript conveniently has hashes (object literals) built right in - we'll use them for
+  the nodes of our simple trie. The top-level node of the trie (<code>this.data</code> in the stub)
+  starts out as an empty object. Your job is to implement the <code>addWord</code> and
+  <code>getSuggestions</code> functions.
+
+  ___TODO___: Implement <code>addWord</code>. 
+
+  The pseudocode for adding an element to a node in the trie is:
+  <pre>
+  addWord(word, trieNode) =
+    1. If word is the empty string:
+      1. Add a 'true' node with key "end" (in our case set, trieNode["end"] =  true)
+      2. Return
+    2. If trieNode does not have a child labeled with the first character of `word`:
+      1. Add a child labeled with that character to trieNode
+    3. Let `newWord` equal `word` but with the first character removed
+    4. Let `newNode` be the child of trieNode labeled with the first character of `word`
+    5. Recursively call addWord(newWord, newNode)
+  </pre>
+
+  Call this algorithm starting with the input word and the root of the trie (<code>this.data</code>).
+  There are some simple test cases in the code to help get you started.
+  Don't forget to convert the input to upper case!
+
+  ___TODO___: Implement <code>getSuggestions</code>.
+
+  This one is a little trickier than <code>addWord</code>, and you won't have pseudocode to guide
+  you through this time. In order to get the suggestions for a given prefix, you'll need to first
+  see if _any_ word starting with the prefix is in the trie by traversing from the root. If there are
+  words starting with that prefix, then you should return an array of all of them. Keep in mind that in
+  this trie implementation, having an "end" key means that a node is the end of a valid word in the trie.
+
+  If no words are found, then this method should return the empty array.
+  Again, there are some simple test cases in the code to help get you started.
+  Again, don't forget to convert the input to upper case!
+
+  Make sure you have implemented Trie correctly before going on to the next part of the assignment.
+
+  ### Part 2: AJAX and Promises (promisifiedAjaxSimple.js, promisifiedAjax.js)
+
+  In this section we are going to use promises to grab dictionary data from a public server. Just
+  like Penn Course Review, the words we are going to work with will be the names of classes at Penn.
+
+  ___TODO___: Implement <code>ajaxGet</code>.
+
+  This function takes in a URL that points to some JSON and returns a promise that resolves to the
+  JSON data. Use Bluebird; this should be a one-liner.
+
+  ___TODO___: Implement <code>trieFromURL</code>.
+
+  This function takes in a URL that points to some JSON and returns a promise that resolves to a
+  trie formed from the JSON data. Use ajaxGet; this should be <5 lines.
+
+  ___TODO___: Implement <code>multiGet</code>.
+
+  This method takes in a URL that represents more documents to get, and a base URL for those documents.
+  It returns a promise for an array that represents all the data from all the documents (do not include
+  the original document from the URL in this array).
+
+  See stub for step-by-step detailed instructions.
+
+  __HINT__: Use [Promise.all](https://github.com/petkaantonov/bluebird/blob/master/API.md#all---promise)
+
+  ___TODO___: Implement <code>trieFromDataPromise</code>.
+
+  This method takes in a promise for data (a string array)and returns a trie constructed from that data.
+  Use multiGet; this should be <5 lines. There is a test case to make sure this method is working correctly.
+
+  ### Part 3: AppView
+
+  Now that we can make tries from remotely-hosted JSON dictionaries, all that's left is to implement
+  the autocompleter in HTML code. Luckily, we've taken care of the CSS and the templating for you. All
+  you need to do is implement a few missing methods on appView.
+
+  ___TODO___: Define <code>events</code> in AppView.
+
+  The events app should do a search (the next method to do) every time a key is pressed. You will
+  find the [Backbone Views documentation](http://backbonejs.org/#View) useful here!
+
+  ___TODO___: Define a <code>search</code> in AppView.
+
+  This function should be called every time a keypress is detected. It will use the trie promise
+  passed in during view initialization to give back suggestions for autocompletion and then call
+  <code>render</code> with the suggestions array as an argument.
+
+  When you're all done it should look something like this:
+
+  ![Demo](https://i.imgur.com/aBziSGM.gif)
+
+  You can comment/uncomment the two different implementations (one JSON file vs. multiple JSON files)
+  in __main.js__ (this demo uses the one-file implementation);
+
 
   ### Notes
-  
+
   As a general rule, please remove "TODO" comment blocks after you implement that
   portion of the assignment.
-  
-  ___Extra Credit___ (3pts): Implement "delete map" functionality that removes
-  a map from the data store.
+
+  ___Extra Credit___ (3pts): Implement "ExtraCreditTrie" (in ExtraCreditTrie.js). This trie functions
+  very similarly to the simple trie that we implemented in part 1, except that it is
+  __partially case-insensitive__. That is, the trie distinguishes between different capitalizations
+  when adding words; but when getting suggestions, it returns _all_ matches, _regardless of case_,
+    _in the original case they were added_.
+
+  To give a concrete example: you could add "PennApps", "Upenn", and "Pennapps" to an ExtraCreditTrie. Then running
+  getSuggestions('penn') would return the array ["PennApps", "Pennapps"].
+
+  ___Extra Credit___ (2pts): Modify ExtraCreditTrie so that it can start matching at any point in the
+  a word. For instance, you could add "PennApps", "Upenn", and "pineapple" to an ExtraCreditTrie. 
+  Then running getSuggestions('app') would return the array ["PennApps", "pineapple"].
+
 
