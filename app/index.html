@@ -4103,8 +4103,9 @@ JSON data. Use Bluebird; this should be a one-liner.</p>
 <p>This function takes in a URL that points to some JSON and returns a promise that resolves to a
 trie formed from the JSON data. Use ajaxGet; this should be &lt;5 lines.</p>
 <p><strong><em>TODO</em></strong>: Implement <code>multiGet</code>.</p>
-<p>This method takes in a URL that represents more documents to get, and a base URL for those documents.
-It returns a promise for an array that represents all the data from all the documents (do not include
+<p>This method takes in a URL that returns an array of more documents to get, and a base URL for those documents.
+Go to <a href="http://cis197.herokuapp.com/departmentURLs.json">cis197.herokuapp.com/departmentURLs.json</a> to see an example.
+The method returns a promise for an array that represents all the data from all the documents (do not include
 the original document from the URL in this array).</p>
 <p>See stub for step-by-step detailed instructions.</p>
 <p><strong>HINT</strong>: Use <a href="https://github.com/petkaantonov/bluebird/blob/master/API.md#all---promise">Promise.all</a></p>
@@ -4124,6 +4125,8 @@ passed in during view initialization to give back suggestions for autocompletion
 <code>render</code> with the suggestions array as an argument.</p>
 <p>When you&#39;re all done it should look something like this:</p>
 <p><img src="https://i.imgur.com/aBziSGM.gif" alt="Demo"></p>
+<p>You can comment/uncomment the two different implementations (one JSON file vs. multiple JSON files)
+in <strong>main.js</strong> (this demo uses the one-file implementation);</p>
 <h3 id="notes">Notes</h3>
 <p>As a general rule, please remove &quot;TODO&quot; comment blocks after you implement that
 portion of the assignment.</p>
