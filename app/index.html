@@ -70,19 +70,13 @@ Refer to the <a href="#style">style guide</a> for coding JavaScript.</p>
 <p>hw4, due <strong>Tues, Oct. 21</strong>: <a href="#hw4">Backbone.js starter</a>.</p>
 <p>hw5, due <strong>Fri, Oct. 31</strong>: <a href="#hw5">Intermediate Backbone.js app</a>.</p>
 <p>hw6, due <strong>Wed, November 19</strong>: <a href="#hw6">Autocompleter</a>.</p>
-<!--
+<p>hw7, due <strong>Wed, December 3</strong>: <a href="#hw7">Product Hunt Client</a> and <a href="#proposal">Final project proposal</a>.</p>
+<h2 id="final-project">Final Project</h2>
+<p>The final project will be an open-ended JavaScript application created with
+client-side framework of the student&#39;s choice. It should demonstrate 10-15
+hours of work.</p>
+<p>See the <a href="#proposal"><strong>proposal spec</strong></a> for more information.</p>
 
-hw7, due __Wed, April 16__: [Final project proposal](#proposal).
-
-
-## Final Project
-
-The final project will be an open-ended JavaScript application created with
-client-side framework of the student's choice. It should demonstrate 10-15
-hours of work. The due date is __May 9__.
-
-See the [__proposal spec__](#proposal) for more information.
--->
       </section>
       <section class="pure-u-3-4 lectures"><h2 id="lectures">Lectures</h2>
 <p><strong>Code samples</strong> from lectures are available in
@@ -215,6 +209,42 @@ See the [__proposal spec__](#proposal) for more information.
               <td>
                 <a href="http://mattgreer.org/articles/promises-in-wicked-detail/">
                   Promises in Wicked Detail
+                </a>
+                
+              </td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>11/4</td>
+              <td>
+                <a href=''>
+                  EventEmitters
+                </a> <br/>
+                <a href=''>
+                  Backbone vs. jQuery
+                </a>
+              </td>
+              <td><a href=''>Lec 9</a></td>
+              <td>
+                <a href=''>EventEmitters</a>
+                
+              </td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>11/11</td>
+              <td>
+                <a href=''>
+                  Testing
+                </a> <br/>
+                <a href=''>
+                  CoffeeScript
+                </a>
+              </td>
+              <td><a href=''>Lec 10</a></td>
+              <td>
+                <a href=''>
+                  CoffeeScript
                 </a>
                 
               </td>
@@ -4143,8 +4173,70 @@ a word. For instance, you could add &quot;PennApps&quot;, &quot;Upenn&quot;, and
 Then running getSuggestions(&#39;app&#39;) would return the array [&quot;PennApps&quot;, &quot;pineapple&quot;].</p>
 
       </section>
+      <section class="pure-u-3-4 notes hw7 language-javascript"><h1 id="homework-7-product-hunt-client-in-react-js">Homework 7: Product Hunt Client in React.js</h1>
+<p>Due <em>Wednesday, December 3 at 9 AM</em>.</p>
+<p>Implementation stub available in the
+<a href="https://github.com/cis197s14/hw/blob/master/hw7/">homework repository</a>.</p>
+<p>This assignment will show you the power and awesomeness of <a href="http://reactjs.org">React.js</a>. You 
+will be implementing an entirely client side Product Hunt reader. 
+<a href="http://www.producthunt.com/">Product Hunt</a> is a link aggregator much like Hacker News, Reddit, 
+and Twitter where products (read: <em>apps</em>) are posted and voted on. We&#39;ll be writing a Product 
+Hunt client that lets us see today&#39;s top posts and view any of the posts&#39; top level comments.</p>
+<p>For this assignment, I&#39;ve provided <strong>two API endpoints</strong>. One fetches the post data and can 
+be found here: <a href="http://ph-api.herokuapp.com/posts">http://ph-api.herokuapp.com/posts</a>. 
+The other fetches comment data and can be found here: 
+<a href="http://ph-api.herokuapp.com/comments?post_id=11287">http://ph-api.herokuapp.com/comments?post_id=11287</a>. 
+Notice that the second endpoint requires a <code>post_id</code> parameter to be passed in the URL. 
+The <code>post_id</code> parameter specifies which post&#39;s comments you are looking for.</p>
+<p>Our client is going to display the posts we get from the posts API endpoint and let the user 
+select which post he wants to read the comments for. There can only be one selected post at 
+a time which means only one post&#39;s comments can be shown at a time.</p>
+<p>The final product should look like this:</p>
+<p><img src="http://i.imgur.com/uL9mbNy.gif" alt="Demo"></p>
+<h3 id="running-the-code">Running the code</h3>
+<p>As in the last homework, you may need the <a href="https://www.npmjs.org/package/http-server">http-server</a>
+npm package in order to run this code because of protocol restrictions (in some browsers,
+you cannot make an AJAX HTTP request from a filesystem HTML page). Install it with 
+<code>npm install -g http-server</code> and run it from you project directory with 
+<code> http-server ./</code>. Navigate to <a href="http://localhost:8080/">http://localhost:8080/</a> 
+to run your code.</p>
+<h3 id="part-1-static-site">Part 1: Static Site</h3>
+<p>Complete the <code>render</code> function of the App component so that it renders some Post components. 
+Feel free (and I encourage you) to pass in dummy data into the Post components to see just how 
+they&#39;re rendered. You can grab post data from the <a href="http://ph-api.herokuapp.com/posts">posts API endpoint</a>. </p>
+<h3 id="part-2-figuring-out-state">Part 2: Figuring out State</h3>
+<p>You are going to need to figure out what state your application needs to keep track of. Again, 
+React.js uses state and the <code>setState</code> function to figure out when to re-render certain views. 
+To help you figure out what state you need, try to think of any variables that will be 
+changing. Those variables will comprise your state object.</p>
+<p>Once you think you&#39;ve got it, modify the <code>getInitialState</code> function of the App component 
+to return the correct initial state. You can think of the initial state of your entire 
+application as the state before the first AJAX call is executed.</p>
+<h3 id="part-3-manipulating-state">Part 3: Manipulating State</h3>
+<p>Once you&#39;re setting the correct initial state, finish the <code>componentDidMount</code> function 
+of the App component to load the post data from the 
+<a href="http://ph-api.herokuapp.com/posts">posts API endpoint</a> and set the state 
+appropriately (use <code>setState</code> to set the state). Again, <code>componentDidMount</code> is a function that&#39;s 
+executed once a component has been rendered.</p>
+<p>Now, you should see that as soon as the AJAX request loads, the state should be set and the 
+Post components should re-render (make sure to hook up the Post components with real data).</p>
+<h3 id="part-4-manipulating-state-with-comments">Part 4: Manipulating State with Comments</h3>
+<p>Keep in mind that you only need to show the currently selected post&#39;s comments.</p>
+<p>Once you have the post data, attach a click handler to the <code>&lt;li&gt;</code> component within Post. Every time 
+a post is clicked, your application should fetch the comments for the clicked post from the server 
+and render the Comments component directly under the clicked post (again, think of state). Also, 
+as in class and the React tutorial, make sure to keep in mind that only the App component can 
+change the state so make sure to pass down a callback from App to Post through the properties.</p>
+<p>As a finishing touch, use the same click handler from the <code>&lt;li&gt;</code> component to enable toggling 
+comments so you can hide the currently selected post&#39;s comments by clicking on the post a 
+second time.</p>
+<h3 id="notes">Notes</h3>
+<p><strong>Extra Credit</strong> (2pts): Implement a cache so that once you fetch a post&#39;s comments once from 
+the server you don&#39;t have to fetch that same post&#39;s comments directly from the server again.</p>
+
+      </section>
       <section class="pure-u-3-4 notes proposal language-javascript"><h1 id="final-project-proposal">Final Project Proposal</h1>
-<p>Due <em>Wednesday, April 16 at 9AM</em>.</p>
+<p>Due <em>Wednesday, December 3 at 9AM</em>.</p>
 <p>The final project will be an opportunity to work on any kind of JavaScript
 project of your choosing that demonstrates the things you learned this
 semester. These projects will generally fall into one of 3 categories:</p>
@@ -4158,9 +4250,6 @@ maybe with a 3rd party API)</li>
 extensions, Express.js, and others.</p>
 <p><em>Another option</em> altogether is to contribute to an open source JavaScript
 framework or library. See some ideas below.</p>
-<p><strong>Group work</strong>: you may form a <em>teams of two students</em> for the final
-project; keep in mind that you will still have to demonstrate 10-15 hours of
-work per student.</p>
 <h4 id="ideas-to-get-you-started">Ideas to get you started</h4>
 <ul>
 <li>Browser-based game (more full-fledged Pokémon, Chess, Sudoku, Connect 4,
@@ -4170,8 +4259,6 @@ Othello, etc.) or game AI</li>
 <li>Chrome extension to add better UI functionality to an existing web app
 (like Gmail, Google Calendar, Facebook, Twitter, etc.)</li>
 <li>Mobile web application (a new one or a rewrite of an existing mobile app)</li>
-<li>Spotify App that runs in the Spotify desktop client
-(<a href="https://developer.spotify.com/technologies/apps/">see docs</a>)</li>
 <li>Desktop application written in JS using
 <a href="https://github.com/rogerwang/node-webkit">node-webkit</a></li>
 </ul>
@@ -4239,7 +4326,7 @@ front end interface, I recommend
 <a href="http://learn.shayhowe.com/advanced-html-css/">An Advanced Guide to HTML &amp; CSS</a>.</p>
 <hr>
 <h2 id="proposal-specification">Proposal Specification</h2>
-<p>By <em>April 16th at 9AM</em>, please submit a project proposal outlining your ideas
+<p>By <em>December 3rd at 9AM</em>, please submit a project proposal outlining your ideas
 and aspirations for the final project. Your submission should have at least
 300 words. Try to answer questions like the following:</p>
 <ul>
@@ -4273,15 +4360,17 @@ correctly, it should show up nicely formatted when you access the <code>.md</cod
 on the Github website.</p>
 <p>Submit the new file(s) using a pull request called &quot;Final Project Proposal&quot;
 <strong>from the <code>final</code> branch to the <code>master</code> branch</strong>.</p>
-<p><em>If you are working in a group</em>: only one person needs to make this
-submission. Be sure to include both group members&#39; names in the proposal.</p>
+<hr>
+<h2 id="proposal-1-on-1s">Proposal 1-on-1s</h2>
+<p>After you&#39;ve submitted your proposal, please <a href="mailto:veg@seas.upenn.edu">email me</a> 
+your availabilities over the next week (from Dec 7th to Dec 10th) so we can arrange 
+a meeting to talk about your proposal.</p>
 <hr>
 <h2 id="project-demos">Project Demos</h2>
 <p>The demo day time slot is TBD, but it will be during finals period. We&#39;ll get
 a room and have some food / drinks. It&#39;ll be fun and you&#39;ll get to see what
 cool things your classmates built.</p>
-<p>You will be required to submit a short writeup along with the final code
-submission (due on demo day). <em>More details about this coming soon</em>.</p>
+<p>You will be required to submit your final code (due on demo day).</p>
 <hr>
 <h2 id="final-project-grading">Final Project Grading</h2>
 <ul>

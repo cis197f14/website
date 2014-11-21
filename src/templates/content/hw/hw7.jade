@@ -1,0 +1,85 @@
+:markdown
+  Homework 7: Product Hunt Client in React.js
+  ============================================
+
+  Due _Wednesday, December 3 at 9 AM_.
+
+  Implementation stub available in the
+  [homework repository](https://github.com/cis197s14/hw/blob/master/hw7/).
+
+  This assignment will show you the power and awesomeness of [React.js](http://reactjs.org). You 
+  will be implementing an entirely client side Product Hunt reader. 
+  [Product Hunt](http://www.producthunt.com/) is a link aggregator much like Hacker News, Reddit, 
+  and Twitter where products (read: *apps*) are posted and voted on. We'll be writing a Product 
+  Hunt client that lets us see today's top posts and view any of the posts' top level comments.
+
+  For this assignment, I've provided **two API endpoints**. One fetches the post data and can 
+  be found here: [http://ph-api.herokuapp.com/posts](http://ph-api.herokuapp.com/posts). 
+  The other fetches comment data and can be found here: 
+  [http://ph-api.herokuapp.com/comments?post_id=11287](http://ph-api.herokuapp.com/comments?post_id=11287). 
+  Notice that the second endpoint requires a `post_id` parameter to be passed in the URL. 
+  The `post_id` parameter specifies which post's comments you are looking for.
+
+  Our client is going to display the posts we get from the posts API endpoint and let the user 
+  select which post he wants to read the comments for. There can only be one selected post at 
+  a time which means only one post's comments can be shown at a time.
+
+  The final product should look like this:
+
+  ![Demo](http://i.imgur.com/uL9mbNy.gif)
+
+  ### Running the code
+
+  As in the last homework, you may need the [http-server](https://www.npmjs.org/package/http-server)
+  npm package in order to run this code because of protocol restrictions (in some browsers,
+  you cannot make an AJAX HTTP request from a filesystem HTML page). Install it with 
+  <code>npm install -g http-server</code> and run it from you project directory with 
+  <code> http-server ./</code>. Navigate to [http://localhost:8080/](http://localhost:8080/) 
+  to run your code.
+
+  ### Part 1: Static Site
+
+  Complete the `render` function of the App component so that it renders some Post components. 
+  Feel free (and I encourage you) to pass in dummy data into the Post components to see just how 
+  they're rendered. You can grab post data from the [posts API endpoint](http://ph-api.herokuapp.com/posts). 
+
+  ### Part 2: Figuring out State
+
+  You are going to need to figure out what state your application needs to keep track of. Again, 
+  React.js uses state and the `setState` function to figure out when to re-render certain views. 
+  To help you figure out what state you need, try to think of any variables that will be 
+  changing. Those variables will comprise your state object.
+
+  Once you think you've got it, modify the `getInitialState` function of the App component 
+  to return the correct initial state. You can think of the initial state of your entire 
+  application as the state before the first AJAX call is executed.
+
+  ### Part 3: Manipulating State
+
+  Once you're setting the correct initial state, finish the `componentDidMount` function 
+  of the App component to load the post data from the 
+  [posts API endpoint](http://ph-api.herokuapp.com/posts) and set the state 
+  appropriately (use `setState` to set the state). Again, `componentDidMount` is a function that's 
+  executed once a component has been rendered.
+
+  Now, you should see that as soon as the AJAX request loads, the state should be set and the 
+  Post components should re-render (make sure to hook up the Post components with real data).
+
+  ### Part 4: Manipulating State with Comments
+
+  Keep in mind that you only need to show the currently selected post's comments.
+
+  Once you have the post data, attach a click handler to the `<li>` component within Post. Every time 
+  a post is clicked, your application should fetch the comments for the clicked post from the server 
+  and render the Comments component directly under the clicked post (again, think of state). Also, 
+  as in class and the React tutorial, make sure to keep in mind that only the App component can 
+  change the state so make sure to pass down a callback from App to Post through the properties.
+
+  As a finishing touch, use the same click handler from the `<li>` component to enable toggling 
+  comments so you can hide the currently selected post's comments by clicking on the post a 
+  second time.
+
+  ### Notes
+
+  __Extra Credit__ (2pts): Implement a cache so that once you fetch a post's comments once from 
+  the server you don't have to fetch that same post's comments directly from the server again.
